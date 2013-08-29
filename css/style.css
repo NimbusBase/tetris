@@ -1,0 +1,19 @@
+#top_bar{
+	height: 70px;
+	background: rgb(24, 33, 61);
+	color: #fff;
+	width: 100%;
+}
+#top_bar .logo{float:left;padding-left: 10px;}
+#top_bar .btns{float:right;}
+#top_bar .btns a{
+	color: #fff;text-decoration: none;
+	background: transparent;
+	border: 3px solid rgb(103, 103, 180);
+	color: #fff;
+	margin-left: 20px;
+	margin-top: 1em;
+}
+.players{padding: 20px;}
+.player{background: #ddd;height: 500px;width: 45%}
+.player1{margin-right: 10%;}
