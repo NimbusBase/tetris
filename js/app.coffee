@@ -20,7 +20,7 @@
 	Tetris.pieces = []
 	for i in [0...4]
 		Tetris.PIECES[i] = []
-	
+
 	Tetris.pieces[0][0] = [ "    ",   "    ",   "    ",   "    ",   "    ",   "    ",   "    " ]
 	Tetris.pieces[0][1] = [ "    ",   "B   ",   "  O ",   " YY ",   " GG ",   " P  ",   "RR  " ]
 	Tetris.pieces[0][2] = [ "bbbb",   "BBB ",   "OOO ",   " YY ",   "GG  ",   "PPP ",   " RR " ]
@@ -40,12 +40,26 @@
 
 	# tetris board 
 	Tetris.board = (canvas,player)->
+		self = @
 		this.context = canvas.getContext('2d')
 
 	Tetris.board.prototype.draw = ()->
 
 
+	#draw single piece
 	Tetris.board.prototype.drawPiece =(piece)->
+
+
+	#check if the piece can fit the grid below
+	Tetris.board.prototype.checkCollision = (piece)->
+
+
+	# clear canvas
+	Tetris.board.prototype.clear = ()->
+
+
+	# current falling piece
+	Tetris.current = (num,x,y,rotation)->
 
 
 

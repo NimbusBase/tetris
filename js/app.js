@@ -36,8 +36,13 @@
   Tetris.pieces[3][2] = [" b  ", " B  ", " O  ", " YY ", " GG ", "PP  ", " R  "];
   Tetris.pieces[3][3] = [" b  ", " B  ", " OO ", "    ", "  G ", " P  ", "    "];
   Tetris.board = function(canvas, player) {
+    var self;
+    self = this;
     return this.context = canvas.getContext('2d');
   };
   Tetris.board.prototype.draw = function() {};
-  return Tetris.board.prototype.drawPiece = function(piece) {};
+  Tetris.board.prototype.drawPiece = function(piece) {};
+  Tetris.board.prototype.checkCollision = function(piece) {};
+  Tetris.board.prototype.clear = function() {};
+  return Tetris.current = function(num, x, y, rotation) {};
 });

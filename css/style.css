@@ -13,7 +13,19 @@
 	color: #fff;
 	margin-left: 20px;
 	margin-top: 1em;
+	margin-right: 10px;
 }
+
+#invite_email{
+	padding: 9px 5px;
+}
+
+input:focus{
+	outline: none;
+}
+
 .players{padding: 20px;}
 .player{background: #ddd;height: 500px;width: 45%}
 .player1{margin-right: 10%;}
+
+
