@@ -8,11 +8,12 @@ Nimbus.Auth.setup(sync)
 Player 	=  Nimbus.Model.setup('Player', ['userid','name','role','online','board','piece','restart'])
 Player.prototype.child = (key)->
 	key = key.toString()
-	players = Player.all()
+	result = Player.all()
 	keys = key.split('/')
 	i=0
 	while i<keys.length
 		result = result[keys[i]]
+		i++
 	result
 Nimbus.Auth.set_app_ready(()->
 	# check auth
@@ -62,7 +63,7 @@ $ ()->
 	)
 
 	$('#invite').click(()->
-		email = $('invite_email').val();
+		email = $('#invite_email').val()
 
 		# check email
 		Nimbus.Share.add_share_user_real(email,(user)->
