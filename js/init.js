@@ -28,32 +28,33 @@ Nimbus.Auth.set_app_ready(function() {
   }
 });
 
-$(function() {
-  var fill_player, set_player;
-  console.log('ready');
-  set_player = function(player, data) {
-    player.email = data.email;
-    player.role = data.role;
-    player.id = data.id;
-    return player.name = data.name;
-  };
-  fill_player = function(user) {
-    var players;
-    console.log(user);
-    user.online = true;
-    players = Player.all();
-    if (user.role === 'owner') {
-      if (players[0]) {
-        return set_player(players[0], user);
-      }
-    } else if (user.role === 'writer') {
-      if (players[1]) {
-        return set_player(players[1], user);
-      }
-    } else {
-      return console.log('error' + JSON.stringify(user));
+window.set_player = function(player, data) {
+  player.email = data.email;
+  player.role = data.role;
+  player.id = data.id;
+  return player.name = data.name;
+};
+
+window.fill_player = function(user) {
+  var players;
+  console.log(user);
+  user.online = true;
+  players = Player.all();
+  if (user.role === 'owner') {
+    if (players[0]) {
+      return set_player(players[0], user);
     }
-  };
+  } else if (user.role === 'writer') {
+    if (players[1]) {
+      return set_player(players[1], user);
+    }
+  } else {
+    return console.log('error' + JSON.stringify(user));
+  }
+};
+
+$(function() {
+  console.log('ready');
   $('a#login').click(function() {
     console.log('auth start...');
     return Nimbus.Auth.authorize('GDrive');

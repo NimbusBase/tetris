@@ -25,25 +25,27 @@ Nimbus.Auth.set_app_ready(()->
 	
 )
 
+window.set_player = (player,data)->
+	player.email = data.email
+	player.role = data.role
+	player.id = data.id
+	player.name = data.name
+
+window.fill_player = (user)->
+	console.log user
+	user.online = true
+	# save user to player according to role
+	players = Player.all();
+	if user.role is 'owner'
+		set_player(players[0],user) if players[0]
+	else if user.role is 'writer'
+		set_player(players[1],user) if players[1]
+	else
+		console.log('error'+JSON.stringify(user))
+
 $ ()->
 	console.log 'ready'
-	set_player = (player,data)->
-		player.email = data.email
-		player.role = data.role
-		player.id = data.id
-		player.name = data.name
 
-	fill_player = (user)->
-		console.log user
-		user.online = true
-		# save user to player according to role
-		players = Player.all();
-		if user.role is 'owner'
-			set_player(players[0],user) if players[0]
-		else if user.role is 'writer'
-			set_player(players[1],user) if players[1]
-		else
-			console.log('error'+JSON.stringify(user))
 	$('a#login').click(()->
 		console.log 'auth start...'
 		Nimbus.Auth.authorize('GDrive')
