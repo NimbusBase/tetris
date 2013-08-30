@@ -5,8 +5,9 @@ sync =
 		"app_name": "tetris"
 
 Nimbus.Auth.setup(sync)
-Player 	=  Nimbus.Model.setup('Player', ['id','name','role','online','board','piece','restart'])
+Player 	=  Nimbus.Model.setup('Player', ['userid','name','role','online','board','piece','restart'])
 Player.prototype.child = (key)->
+	key = key.toString()
 	players = Player.all()
 	keys = key.split('/')
 	i=0
@@ -35,7 +36,7 @@ window.set_player = (data)->
 		player = Player.create()	
 		player.email = data.email
 		player.role = data.role
-		player.id = data.id
+		player.userid = data.id
 		player.name = data.name
 	player.online = true
 	player.save()

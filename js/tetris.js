@@ -355,7 +355,7 @@ var Tetris = { };
   Tetris.Controller.prototype.createBoards = function () {
     this.boards = [];
     for(var i = 0; i <= 1; i++) {
-      var playerRef = this.tetrisRef.child('player' + i);
+      var playerRef = this.tetrisRef.child(i);
       var canvas = $('#canvas' + i).get(0);
       this.boards.push(new Tetris.Board(canvas, playerRef));
     }
