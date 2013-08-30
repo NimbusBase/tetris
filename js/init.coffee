@@ -58,6 +58,7 @@ $ ()->
 	$('a#login').click(()->
 		console.log 'auth start...'
 		Nimbus.Auth.authorize('GDrive')
+		false
 	)
 
 	$('#invite').click(()->
@@ -67,5 +68,6 @@ $ ()->
 		Nimbus.Share.add_share_user_real(email,(user)->
 			fill_player(user)
 		)
+		false
 	)
 	true
