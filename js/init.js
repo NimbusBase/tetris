@@ -15,45 +15,56 @@ Player = Nimbus.Model.setup('Player', ['id', 'name', 'role', 'online', 'board', 
 
 Nimbus.Auth.set_app_ready(function() {
   if (Nimbus.Auth.authorized()) {
+    Nimbus.Share.get_me(function(me) {
+      var player;
+      console.log('init myself');
+      fill_player(me);
+      player = Player.findByAttribute('email', me.email);
+      return new Tetris(player);
+    });
     return Player.sync_all(function() {
       return console.log('players synced');
     });
   }
 });
 
-$(function() {
-  var fill_player, set_player;
-  set_player = function(player, data) {
-    player.email = data.email;
-    player.role = data.role;
-    player.id = data.id;
-    return player.name = data.name;
-  };
-  fill_player = function(user) {
-    var players;
-    console.log(user);
-    user.online = true;
-    players = Player.all();
-    if (user.role === 'owner') {
-      if (players[0]) {
-        return set_player(players[0], user);
-      }
-    } else if (user.role === 'writer') {
-      if (players[1]) {
-        return set_player(players[1], user);
-      }
-    } else {
-      return console.log('error' + JSON.stringify(user));
+window.set_player = function(player, data) {
+  player.email = data.email;
+  player.role = data.role;
+  player.id = data.id;
+  return player.name = data.name;
+};
+
+window.fill_player = function(user) {
+  var players;
+  console.log(user);
+  user.online = true;
+  players = Player.all();
+  if (user.role === 'owner') {
+    if (players[0]) {
+      return set_player(players[0], user);
     }
-  };
-  $('#login').click = function() {
+  } else if (user.role === 'writer') {
+    if (players[1]) {
+      return set_player(players[1], user);
+    }
+  } else {
+    return console.log('error' + JSON.stringify(user));
+  }
+};
+
+$(function() {
+  console.log('ready');
+  $('a#login').click(function() {
+    console.log('auth start...');
     return Nimbus.Auth.authorize('GDrive');
-  };
-  return $('#invite').click = function() {
+  });
+  $('#invite').click(function() {
     var email;
     email = $('invite_email').val();
     return Nimbus.Share.add_share_user_real(email, function(user) {
       return fill_player(user);
     });
-  };
+  });
+  return true;
 });
