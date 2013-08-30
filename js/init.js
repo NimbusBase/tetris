@@ -33,20 +33,36 @@ Player.prototype.child = function(key) {
 Nimbus.Auth.set_app_ready(function() {
   if (Nimbus.Auth.authorized()) {
     $('#login').text('Logout');
-    Nimbus.Share.get_me(function(me) {
-      var player;
+    return Nimbus.Share.get_me(function(me) {
+      var collabrators, one, player, _i, _j, _len, _len1, _ref, _results;
       fill_player(me);
       player = Player.findByAttribute('userid', me.id);
-      return new Tetris.Controller(player);
-    });
-    return Player.sync_all(function() {
-      return console.log('players synced');
+      new Tetris.Controller(player);
+      collabrators = doc.getCollaborators();
+      console.log(collabrators);
+      _ref = Player.all();
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        player = _ref[_i];
+        player.online = false;
+        for (_j = 0, _len1 = collabrators.length; _j < _len1; _j++) {
+          one = collabrators[_j];
+          console.log('player ' + player.name + ' online');
+          if (one.userId === player.userid) {
+            player.online = true;
+          }
+          player.save();
+          break;
+        }
+        _results.push(player.save());
+      }
+      return _results;
     });
   }
 });
 
 window.set_player = function(data, target) {
-  var index, player, players;
+  var player;
   player = Player.findByAttribute('userid', data.id);
   if (!player) {
     player = Player.create();
@@ -55,10 +71,7 @@ window.set_player = function(data, target) {
     player.name = data.name;
   }
   player.online = true;
-  player.save();
-  players = Player.all();
-  index = players.indexOf(player);
-  return $('.playername' + index).text(player.name);
+  return player.save();
 };
 
 window.fill_player = function(user) {

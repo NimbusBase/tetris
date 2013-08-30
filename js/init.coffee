@@ -21,16 +21,24 @@ Nimbus.Auth.set_app_ready(()->
 	# check auth
 	if Nimbus.Auth.authorized()
 		$('#login').text('Logout')
+		# sync player,board
 		Nimbus.Share.get_me((me)->
 			fill_player(me)
 			player = Player.findByAttribute('userid', me.id)
 			new Tetris.Controller(player)
-		)
-		# sync player,board
-		Player.sync_all(()->
-			console.log('players synced')
-		)
-	
+
+			collabrators = doc.getCollaborators()
+			console.log collabrators
+			for player in Player.all()
+				player.online = false
+				for one in collabrators
+					console.log('player '+player.name+' online')
+					player.online=true if one.userId is player.userid
+					player.save()
+					break
+				player.save()
+
+		)	
 )
 
 window.set_player = (data,target)->
@@ -42,10 +50,6 @@ window.set_player = (data,target)->
 		player.name = data.name
 	player.online = true
 	player.save()
-
-	players = Player.all()
-	index = players.indexOf(player)
-	$('.playername'+index).text(player.name)
 
 window.fill_player = (user)->
 	players = Player.all()

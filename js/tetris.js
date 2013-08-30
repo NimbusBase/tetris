@@ -350,6 +350,19 @@ var Tetris = { };
   Tetris.Controller = function (tetrisRef) {
     this.tetrisRef = tetrisRef;
     this.createBoards();
+    var players = Player.all(),
+        index;
+    for (var i = players.length - 1; i >= 0; i--) {
+      var player;
+      player = players[i]
+      $('.player_name'+i).text(player.name);
+
+      if (player.userid == tetrisRef.userid) {
+        index = i;
+        break;
+      };
+    };
+    $('.player_name'+index).text(tetrisRef.name);
 
     this.playingState = Tetris.PlayingState.Watching;
     this.waitToJoin();

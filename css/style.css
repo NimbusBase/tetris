@@ -25,7 +25,9 @@ input:focus{
 }
 
 .players{padding: 20px;}
-.player{background: #ddd;height: 500px;width: 45%}
+.player{width: 45%}
+.player p{text-align: center;}
 .player1{margin-right: 9%;}
+.player canvas{background: #ddd;height: 450px;margin: 0 auto;width: 80%;display: block;}
 
 
