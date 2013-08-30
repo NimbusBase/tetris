@@ -5,7 +5,9 @@ sync =
 		"app_name": "tetris"
 
 Nimbus.Auth.setup(sync)
-Player 	=  Nimbus.Model.setup('Player', ['userid','name','role','online','board','piece','restart'])
+window.realtime_update_callback = ()->
+	console.log('updated...')
+Player 	=  Nimbus.Model.setup('Player', ['userid','name','online','board','piece','restart'])
 Player.prototype.child = (key)->
 	key = key.toString()
 	result = Player.all()
@@ -18,8 +20,8 @@ Player.prototype.child = (key)->
 Nimbus.Auth.set_app_ready(()->
 	# check auth
 	if Nimbus.Auth.authorized()
+		$('#login').text('Logout')
 		Nimbus.Share.get_me((me)->
-			me.role = 'owner'
 			fill_player(me)
 			player = Player.findByAttribute('userid', me.id)
 			new Tetris.Controller(player)
@@ -31,28 +33,37 @@ Nimbus.Auth.set_app_ready(()->
 	
 )
 
-window.set_player = (data)->
+window.set_player = (data,target)->
 	player = Player.findByAttribute('userid',data.id)
 	if !player
 		player = Player.create()	
 		player.email = data.email
-		player.role = data.role
 		player.userid = data.id
 		player.name = data.name
 	player.online = true
 	player.save()
 
-window.fill_player = (user)->
-	user.online = true
-	# save user to player according to role
-	if user.role is 'owner'
-		set_player(user)
-	else if user.role is 'writer'
-		writer = Player.findByAttribute('role','writer')
-		set_player(user) if !writer or !writer.online
-	else
-		console.log('error'+JSON.stringify(user))
+	players = Player.all()
+	index = players.indexOf(player)
+	$('.playername'+index).text(player.name)
 
+window.fill_player = (user)->
+	players = Player.all()
+	if players.length<2
+		set_player(user)
+		return
+	for player in players
+		if player.userid is user.id
+			player.online = true
+			player.save()
+			return
+		else if !player.online
+			player.destroy()
+			set_player(user)
+			return
+
+	console.log 'waiting...'
+		
 $ ()->
 	console.log 'ready'
 

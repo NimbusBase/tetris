@@ -11,7 +11,11 @@ sync = {
 
 Nimbus.Auth.setup(sync);
 
-Player = Nimbus.Model.setup('Player', ['userid', 'name', 'role', 'online', 'board', 'piece', 'restart']);
+window.realtime_update_callback = function() {
+  return console.log('updated...');
+};
+
+Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'restart']);
 
 Player.prototype.child = function(key) {
   var i, keys, result;
@@ -28,9 +32,9 @@ Player.prototype.child = function(key) {
 
 Nimbus.Auth.set_app_ready(function() {
   if (Nimbus.Auth.authorized()) {
+    $('#login').text('Logout');
     Nimbus.Share.get_me(function(me) {
       var player;
-      me.role = 'owner';
       fill_player(me);
       player = Player.findByAttribute('userid', me.id);
       return new Tetris.Controller(player);
@@ -41,33 +45,42 @@ Nimbus.Auth.set_app_ready(function() {
   }
 });
 
-window.set_player = function(data) {
-  var player;
+window.set_player = function(data, target) {
+  var index, player, players;
   player = Player.findByAttribute('userid', data.id);
   if (!player) {
     player = Player.create();
     player.email = data.email;
-    player.role = data.role;
     player.userid = data.id;
     player.name = data.name;
   }
   player.online = true;
-  return player.save();
+  player.save();
+  players = Player.all();
+  index = players.indexOf(player);
+  return $('.playername' + index).text(player.name);
 };
 
 window.fill_player = function(user) {
-  var writer;
-  user.online = true;
-  if (user.role === 'owner') {
-    return set_player(user);
-  } else if (user.role === 'writer') {
-    writer = Player.findByAttribute('role', 'writer');
-    if (!writer || !writer.online) {
-      return set_player(user);
-    }
-  } else {
-    return console.log('error' + JSON.stringify(user));
+  var player, players, _i, _len;
+  players = Player.all();
+  if (players.length < 2) {
+    set_player(user);
+    return;
   }
+  for (_i = 0, _len = players.length; _i < _len; _i++) {
+    player = players[_i];
+    if (player.userid === user.id) {
+      player.online = true;
+      player.save();
+      return;
+    } else if (!player.online) {
+      player.destroy();
+      set_player(user);
+      return;
+    }
+  }
+  return console.log('waiting...');
 };
 
 $(function() {

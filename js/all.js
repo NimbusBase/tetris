@@ -3658,6 +3658,7 @@
         log("changing the data inside a entry event");
         return model.update_to_local(obj);
       }
+      window.realtime_update_callback();
     };
     todo = doc.getModel().getRoot().get("todo");
     window.todo = todo;

@@ -53,10 +53,10 @@ var Tetris = { };
 
     // Listen for changes to our board.
     var self = this;
-    playerRef.on('value', function(snapshot) {
-      self.snapshot = snapshot;
-      self.draw();
-    });
+    // playerRef.on('value', function(snapshot) {
+    //   self.snapshot = snapshot;
+    //   self.draw();
+    // });
   };
 
 
@@ -280,6 +280,10 @@ var Tetris = { };
     this.setRow(y, rowContents);
   };
 
+  Tetris.Board.prototype.getMine = function(){
+
+  }
+
 
   /**
    * Immutable object representing a falling piece along with its rotation and board position.
@@ -366,17 +370,17 @@ var Tetris = { };
     var self = this;
 
     // Listen on 'online' location for player0 and player1.
-    this.tetrisRef.child('player0/online').on('value', function(onlineSnap) {
-      if (onlineSnap.val() === null && self.playingState === Tetris.PlayingState.Watching) {
-        self.tryToJoin(0);
-      }
-    });
+    // this.tetrisRef.child('0/online').on('value', function(onlineSnap) {
+    //   if (onlineSnap.val() === null && self.playingState === Tetris.PlayingState.Watching) {
+    //     self.tryToJoin(0);
+    //   }
+    // });
 
-    this.tetrisRef.child('player1/online').on('value', function(onlineSnap) {
-      if (onlineSnap.val() === null && self.playingState === Tetris.PlayingState.Watching) {
-        self.tryToJoin(1);
-      }
-    });
+    // this.tetrisRef.child('1/online').on('value', function(onlineSnap) {
+    //   if (onlineSnap.val() === null && self.playingState === Tetris.PlayingState.Watching) {
+    //     self.tryToJoin(1);
+    //   }
+    // });
   };
 
 
