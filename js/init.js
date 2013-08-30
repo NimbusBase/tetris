@@ -14,13 +14,14 @@ Nimbus.Auth.setup(sync);
 Player = Nimbus.Model.setup('Player', ['userid', 'name', 'role', 'online', 'board', 'piece', 'restart']);
 
 Player.prototype.child = function(key) {
-  var i, keys, players, result;
+  var i, keys, result;
   key = key.toString();
-  players = Player.all();
+  result = Player.all();
   keys = key.split('/');
   i = 0;
   while (i < keys.length) {
     result = result[keys[i]];
+    i++;
   }
   return result;
 };
