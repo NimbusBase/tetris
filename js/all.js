@@ -3497,7 +3497,7 @@
 
   REALTIME_MIMETYPE = 'application/vnd.google-apps.drive-sdk';
 
-  window.app_id = "424243246254";
+  window.app_id = "361504558285";
 
   Nimbus.Model.Realtime = {
     cloudcache: {},
