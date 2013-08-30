@@ -13,14 +13,25 @@ Nimbus.Auth.setup(sync);
 
 Player = Nimbus.Model.setup('Player', ['id', 'name', 'role', 'online', 'board', 'piece', 'restart']);
 
+Player.prototype.child = function(key) {
+  var i, keys, players, result;
+  players = Player.all();
+  keys = key.split('/');
+  i = 0;
+  while (i < keys.length) {
+    result = result[keys[i]];
+  }
+  return result;
+};
+
 Nimbus.Auth.set_app_ready(function() {
   if (Nimbus.Auth.authorized()) {
     Nimbus.Share.get_me(function(me) {
       var player;
-      console.log('init myself');
+      me.role = 'owner';
       fill_player(me);
-      player = Player.findByAttribute('email', me.email);
-      return new Tetris(player);
+      player = Player.findByAttribute('userid', me.id);
+      return new Tetris.Controller(player);
     });
     return Player.sync_all(function() {
       return console.log('players synced');
@@ -28,25 +39,29 @@ Nimbus.Auth.set_app_ready(function() {
   }
 });
 
-window.set_player = function(player, data) {
-  player.email = data.email;
-  player.role = data.role;
-  player.id = data.id;
-  return player.name = data.name;
+window.set_player = function(data) {
+  var player;
+  player = Player.findByAttribute('userid', data.id);
+  if (!player) {
+    player = Player.create();
+    player.email = data.email;
+    player.role = data.role;
+    player.id = data.id;
+    player.name = data.name;
+  }
+  player.online = true;
+  return player.save();
 };
 
 window.fill_player = function(user) {
-  var players;
-  console.log(user);
+  var writer;
   user.online = true;
-  players = Player.all();
   if (user.role === 'owner') {
-    if (players[0]) {
-      return set_player(players[0], user);
-    }
+    return set_player(user);
   } else if (user.role === 'writer') {
-    if (players[1]) {
-      return set_player(players[1], user);
+    writer = Player.findByAttribute('role', 'writer');
+    if (!writer || !writer.online) {
+      return set_player(user);
     }
   } else {
     return console.log('error' + JSON.stringify(user));
