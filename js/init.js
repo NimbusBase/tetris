@@ -31,44 +31,48 @@ Player.prototype.child = function(key) {
 };
 
 Nimbus.Auth.set_app_ready(function() {
+  var collabrators, data, me, one, player, _i, _j, _k, _len, _len1, _len2, _ref, _results;
   if (Nimbus.Auth.authorized()) {
     $('#login').text('Logout');
-    return Nimbus.Share.get_me(function(me) {
-      var collabrators, one, player, _i, _j, _len, _len1, _ref, _results;
-      fill_player(me);
-      player = Player.findByAttribute('userid', me.id);
-      new Tetris.Controller(player);
-      collabrators = doc.getCollaborators();
-      console.log(collabrators);
-      _ref = Player.all();
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        player = _ref[_i];
-        player.online = false;
-        for (_j = 0, _len1 = collabrators.length; _j < _len1; _j++) {
-          one = collabrators[_j];
-          console.log('player ' + player.name + ' online');
-          if (one.userId === player.userid) {
-            player.online = true;
-          }
-          player.save();
-          break;
-        }
-        _results.push(player.save());
+    collabrators = doc.getCollaborators();
+    for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
+      one = collabrators[_i];
+      if (one.isMe) {
+        localStorage['current'] = JSON.stringify(one);
+        fill_player(one);
+        me = one;
       }
-      return _results;
-    });
+    }
+    data = Player.findByAttribute('userid', me.userId);
+    new Tetris.Controller(data);
+    _ref = Player.all();
+    _results = [];
+    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+      player = _ref[_j];
+      player.online = false;
+      for (_k = 0, _len2 = collabrators.length; _k < _len2; _k++) {
+        one = collabrators[_k];
+        if (one.userId === player.userid) {
+          console.log('player ' + player.name + ' online');
+          player.online = true;
+        }
+        player.save();
+        break;
+      }
+      _results.push(player.save());
+    }
+    return _results;
   }
 });
 
 window.set_player = function(data, target) {
   var player;
-  player = Player.findByAttribute('userid', data.id);
+  player = Player.findByAttribute('userid', data.userId);
   if (!player) {
     player = Player.create();
     player.email = data.email;
-    player.userid = data.id;
-    player.name = data.name;
+    player.userid = data.userId;
+    player.name = data.displayName;
   }
   player.online = true;
   return player.save();
@@ -83,7 +87,7 @@ window.fill_player = function(user) {
   }
   for (_i = 0, _len = players.length; _i < _len; _i++) {
     player = players[_i];
-    if (player.userid === user.id) {
+    if (player.userid === user.userId) {
       player.online = true;
       player.save();
       return;
@@ -97,7 +101,6 @@ window.fill_player = function(user) {
 };
 
 $(function() {
-  console.log('ready');
   $('a#login').click(function() {
     console.log('auth start...');
     Nimbus.Auth.authorize('GDrive');

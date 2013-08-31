@@ -348,18 +348,22 @@ var Tetris = { };
    */
   Tetris.PlayingState = { Watching: 0, Joining: 1, Playing: 2 };
   Tetris.Controller = function (tetrisRef) {
+    console.log('init tetrs for:'+tetrisRef.name);
     this.tetrisRef = tetrisRef;
     this.createBoards();
     var players = Player.all(),
         index;
-    for (var i = players.length - 1; i >= 0; i--) {
-      var player;
+    for (var i = 0; i <=players.length-1; i++) {
+      var player,display=player.name;
       player = players[i]
-      $('.player_name'+i).text(player.name);
+      console.log(player);
+      if (!player.online) {
+        display += '(offline)';
+      };
+      $('.player_name'+i).text(display);
 
       if (player.userid == tetrisRef.userid) {
         index = i;
-        break;
       };
     };
     $('.player_name'+index).text(tetrisRef.name);

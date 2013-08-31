@@ -3655,7 +3655,7 @@
         }
         return window.currently_syncing = false;
       } else {
-        log("changing the data inside a entry event");
+        console.log("changing the data inside a entry event");
         return model.update_to_local(obj);
       }
       window.realtime_update_callback();
