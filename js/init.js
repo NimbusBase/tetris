@@ -12,8 +12,16 @@ sync = {
 Nimbus.Auth.setup(sync);
 
 window.realtime_update_callback = function() {
+  for (var i = 0; i < controllers.length; i++) {
+    console.log('tell controller to draw');
+    var userid = controllers[i].myBoard.playerRef.userid;
+    controllers[i].myBoard.snapshot = Player.findByAttribute('userid',userid);
+    // console.log(controllers[i].myBoard);
+    controllers[i].myBoard.draw();
+  };
   return console.log('updated...');
 };
+window.controllers = [];
 
 Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'restart']);
 
@@ -43,8 +51,7 @@ Nimbus.Auth.set_app_ready(function() {
         me = one;
       }
     }
-    data = Player.findByAttribute('userid', me.userId);
-    new Tetris.Controller(data);
+    
     _ref = Player.all();
     _results = [];
     for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
@@ -55,6 +62,8 @@ Nimbus.Auth.set_app_ready(function() {
         if (one.userId === player.userid) {
           console.log('player ' + player.name + ' online');
           player.online = true;
+          var controller = new Tetris.Controller(player);
+          controllers.push(controller);
         }
         player.save();
         break;

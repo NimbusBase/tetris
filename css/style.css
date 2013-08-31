@@ -28,6 +28,6 @@ input:focus{
 .player{width: 45%}
 .player p{text-align: center;}
 .player1{margin-right: 9%;}
-.player canvas{background: #ddd;height: 450px;margin: 0 auto;width: 80%;display: block;}
+.player canvas{border:1px solid #ddd;height: 508px;margin: 0 auto;width: 258px;display: block;}
 
 
