@@ -14,7 +14,6 @@ Nimbus.Auth.setup(sync);
 window.realtime_update_callback = function() {
   for (var i = 0; i < controllers.boards.length; i++) {
     var board = controllers.boards[i];
-    console.log('tell controller to draw board '+i);
 
     if (board && board.playerRef) {
       board.snapshot = board.playerRef;
@@ -23,7 +22,6 @@ window.realtime_update_callback = function() {
       console.log('player not online...');  
     }
   };
-  return console.log('updated...');
 };
 
 Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'restart']);

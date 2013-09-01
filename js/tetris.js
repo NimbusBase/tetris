@@ -6,7 +6,7 @@ var Tetris = { };
   Tetris.BOARD_WIDTH = 10; // (in "blocks", not pixels)
   Tetris.BOARD_HEIGHT = 20;
 
-  Tetris.BLOCK_SIZE_PIXELS = 10;
+  Tetris.BLOCK_SIZE_PIXELS = 25;
   Tetris.BOARD_HEIGHT_PIXELS = Tetris.BOARD_HEIGHT * Tetris.BLOCK_SIZE_PIXELS;
   Tetris.BOARD_WIDTH_PIXELS = Tetris.BOARD_WIDTH * Tetris.BLOCK_SIZE_PIXELS;
 
@@ -546,7 +546,7 @@ var Tetris = { };
       this.myBoard.addLandedPiece(this.fallingPiece);
       console.log('landing the plane...');
       // Check for completed lines and if appropriate, push extra rows to our opponent.
-      // var completedRows = this.myBoard.removeCompletedRows();
+      var completedRows = this.myBoard.removeCompletedRows();
       // var rowsToPush = (completedRows === 4) ? 4 : completedRows - 1;
       // if (rowsToPush > 0)
       //   this.opponentPlayerRef.child('extrarows').push(rowsToPush);
