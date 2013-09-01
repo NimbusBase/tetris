@@ -64,10 +64,8 @@ Nimbus.Auth.set_app_ready(function() {
         if (one.userId === player.userid) {
           console.log('player ' + player.name + ' online');
           player.online = true;
-          
         }
         player.save();
-        break;
       }
       _results.push(player.save());
     }

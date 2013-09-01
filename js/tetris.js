@@ -374,29 +374,23 @@ var Tetris = { };
     this.tetrisRef = tetrisRef;
     this.createBoards();
 
-    var index;
-    for (var i=0;i<this.tetrisRef.length;i++) {
-      var player = this.tetrisRef[i],
-          display = player.name;
-      if (!player.online) {
-        display += '(offline)';
-      }else{
-        this.tryToJoin(i);
-      };
-  
-      $('.player_name'+i).text(display);
-     
-    };
-
+    this.tryToJoin();
   };
 
 
   Tetris.Controller.prototype.createBoards = function () {
     this.boards = [];
     for(var i = 0; i <= 1; i++) {
-      var playerRef = this.tetrisRef[i];
-      var canvas = $('#canvas' + i).get(0);
-      this.boards.push(new Tetris.Board(canvas, playerRef));
+      var playerRef = this.tetrisRef[i],display;
+      if (playerRef) {
+        var canvas = $('#canvas' + i).get(0);
+        this.boards.push(new Tetris.Board(canvas, playerRef));
+        display = playerRef.name;
+        if (!playerRef.online) {
+          display += '(offline)';
+        }
+        $('.player_name'+i).text(display);
+      };
     }
   };
 
@@ -404,37 +398,34 @@ var Tetris = { };
    * Try to join the game as the specified playerNum.
    */
   Tetris.Controller.prototype.tryToJoin = function(playerNum) {
-    // query the status of player
-    var player = Player.all()[playerNum];
-    if (player.state<1) {
-
-    }else{
-      console.log('waiting...');
-    };
+    // join the current user
     this.playingState = Tetris.PlayingState.Joining;
-    console.log('try join as '+playerNum);
+    var current = JSON.parse(localStorage['current']),self=this;
     // Use a transaction to make sure we don't conflict with other people trying to join.
-    var self = this;
-    var online = player.online;
-    console.log(online);
-    if (online) {
-      self.playingState = Tetris.PlayingState.Playing;
-      self.startPlaying(playerNum);
-    }else{
-      console.log('can not start,please wait...');
-    }
-   
+    for (var i = 0; i < this.tetrisRef.length; i++) {
+      if(this.tetrisRef[i].userid = current.userId){
+        this.myPlayerRef = this.tetrisRef[i];
+      }
+    };
+
+    for (var i = 0; i < self.boards.length; i++) {
+      var board = self.boards[i];
+      if (board.playerRef.userid == this.myPlayerRef.userid) {
+        this.myBoard = board;
+        this.myBoard.isMyBoard = true;
+      };
+    };
+
+    self.playingState = Tetris.PlayingState.Playing;
+    self.startPlaying();
+
   };
 
 
   /**
    * Once we've joined, enable controlling our player.
    */
-  Tetris.Controller.prototype.startPlaying = function (playerNum) {
-    this.myPlayerRef = this.tetrisRef[playerNum];
-    this.opponentPlayerRef = this.tetrisRef[(1 - playerNum)];
-    this.myBoard = this.boards[playerNum];
-    this.myBoard.isMyBoard = true;
+  Tetris.Controller.prototype.startPlaying = function () {
     this.myBoard.draw();
 
     this.initializePiece();
