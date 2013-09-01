@@ -373,21 +373,21 @@ var Tetris = { };
   Tetris.Controller = function (tetrisRef) {
     this.tetrisRef = tetrisRef;
     this.createBoards();
-    console.log(this.tetrisRef.length);
+
     var index;
     for (var i=0;i<this.tetrisRef.length;i++) {
       var player = this.tetrisRef[i],
           display = player.name;
       if (!player.online) {
         display += '(offline)';
+      }else{
+        this.tryToJoin(i);
       };
   
       $('.player_name'+i).text(display);
+     
     };
-    // $('.player_name'+index).text(tetrisRef.name);
 
-    this.playingState = Tetris.PlayingState.Playing;
-    this.startPlaying(0);
   };
 
 
@@ -400,23 +400,22 @@ var Tetris = { };
     }
   };
 
-
-  Tetris.Controller.prototype.waitToJoin = function() {
-    var self = this;
-
-  };
-
-
   /**
    * Try to join the game as the specified playerNum.
    */
   Tetris.Controller.prototype.tryToJoin = function(playerNum) {
-    // Set ourselves as joining to make sure we don't try to join as both players. :-)
+    // query the status of player
+    var player = Player.all()[playerNum];
+    if (player.state<1) {
+
+    }else{
+      console.log('waiting...');
+    };
     this.playingState = Tetris.PlayingState.Joining;
     console.log('try join as '+playerNum);
     // Use a transaction to make sure we don't conflict with other people trying to join.
     var self = this;
-    var online = this.tetrisRef.child(playerNum + '/online');
+    var online = player.online;
     console.log(online);
     if (online) {
       self.playingState = Tetris.PlayingState.Playing;

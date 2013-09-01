@@ -24,7 +24,7 @@ window.realtime_update_callback = function() {
   };
 };
 
-Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'restart']);
+Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'restart','state']);
 
 Player.prototype.child = function(key) {
   var i, keys, result;
@@ -58,6 +58,7 @@ Nimbus.Auth.set_app_ready(function() {
     for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
       player = _ref[_j];
       player.online = false;
+      player.state = 0;
       for (_k = 0, _len2 = collabrators.length; _k < _len2; _k++) {
         one = collabrators[_k];
         if (one.userId === player.userid) {
@@ -111,8 +112,13 @@ window.fill_player = function(user) {
 
 $(function() {
   $('a#login').click(function() {
-    console.log('auth start...');
-    Nimbus.Auth.authorize('GDrive');
+    if ($(this).text() == 'Logout') {
+      Nimbus.Auth.logout();
+    }else{
+      console.log('auth start...');
+      Nimbus.Auth.authorize('GDrive');
+    };
+   
     return false;
   });
   $('#invite').click(function() {
