@@ -69,10 +69,24 @@ var Tetris = { };
           var left = x * Tetris.BLOCK_SIZE_PIXELS;
           var top = y * Tetris.BLOCK_SIZE_PIXELS;
           this.context.fillStyle = Tetris.BLOCK_COLORS[colorValue];
-          this.context.fillRect(left, top, Tetris.BLOCK_SIZE_PIXELS, Tetris.BLOCK_SIZE_PIXELS);
+          var radius = 3,height=24,width=24;
+          
+          this.context.beginPath();  
+          this.context.moveTo(left,top+radius);  
+          this.context.lineTo(left,top+height-radius);  
+          this.context.quadraticCurveTo(left,top+height,left+radius,top+height);  
+          this.context.lineTo(left+width-radius,top+height);  
+          this.context.quadraticCurveTo(left+width,top+height,left+width,top+height-radius);  
+          this.context.lineTo(left+width,top+radius);  
+          this.context.quadraticCurveTo(left+width,top,left+width-radius,top);  
+          this.context.lineTo(left+radius,top);  
+          this.context.quadraticCurveTo(left,top,left,top+radius);
+          this.context.fill();
+
+          // this.context.fillRect(left, top, Tetris.BLOCK_SIZE_PIXELS, Tetris.BLOCK_SIZE_PIXELS);
           this.context.lineWidth = 1;
           this.context.strokeStyle = Tetris.BLOCK_BORDER_COLOR; 
-          this.context.strokeRect(left, top, Tetris.BLOCK_SIZE_PIXELS, Tetris.BLOCK_SIZE_PIXELS);
+          // this.context.strokeRect(left, top, Tetris.BLOCK_SIZE_PIXELS, Tetris.BLOCK_SIZE_PIXELS);
         }
       }
     }
@@ -105,12 +119,25 @@ var Tetris = { };
       function (x, y, colorValue) {
         var left = x * Tetris.BLOCK_SIZE_PIXELS;
         var top = y * Tetris.BLOCK_SIZE_PIXELS;
-
+        
         self.context.fillStyle = Tetris.BLOCK_COLORS[colorValue];
-        self.context.fillRect(left, top, Tetris.BLOCK_SIZE_PIXELS, Tetris.BLOCK_SIZE_PIXELS);
+        var radius = 3,height=24,width=24;
+        self.context.beginPath();  
+        self.context.moveTo(left,top+radius);  
+        self.context.lineTo(left,top+height-radius);  
+        self.context.quadraticCurveTo(left,top+height,left+radius,top+height);  
+        self.context.lineTo(left+width-radius,top+height);  
+        self.context.quadraticCurveTo(left+width,top+height,left+width,top+height-radius);  
+        self.context.lineTo(left+width,top+radius);  
+        self.context.quadraticCurveTo(left+width,top,left+width-radius,top);  
+        self.context.lineTo(left+radius,top);  
+        self.context.quadraticCurveTo(left,top,left,top+radius);
+        self.context.fill();
+
+        // self.context.fillRect(left, top, Tetris.BLOCK_SIZE_PIXELS, Tetris.BLOCK_SIZE_PIXELS);
         self.context.lineWidth = 1;
         self.context.strokeStyle = Tetris.BLOCK_BORDER_COLOR;
-        self.context.strokeRect(left, top, Tetris.BLOCK_SIZE_PIXELS, Tetris.BLOCK_SIZE_PIXELS);
+        // self.context.strokeRect(left, top, Tetris.BLOCK_SIZE_PIXELS, Tetris.BLOCK_SIZE_PIXELS);
       });
   };
 

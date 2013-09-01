@@ -14,6 +14,8 @@ Nimbus.Auth.setup(sync);
 window.realtime_update_callback = function() {
   for (var i = 0; i < controllers.boards.length; i++) {
     var board = controllers.boards[i];
+    //todo check if player is online
+    
 
     if (board && board.playerRef) {
       board.snapshot = board.playerRef;
