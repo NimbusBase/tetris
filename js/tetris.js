@@ -6,7 +6,7 @@ var Tetris = { };
   Tetris.BOARD_WIDTH = 10; // (in "blocks", not pixels)
   Tetris.BOARD_HEIGHT = 20;
 
-  Tetris.BLOCK_SIZE_PIXELS = 25;
+  Tetris.BLOCK_SIZE_PIXELS = 10;
   Tetris.BOARD_HEIGHT_PIXELS = Tetris.BOARD_HEIGHT * Tetris.BLOCK_SIZE_PIXELS;
   Tetris.BOARD_WIDTH_PIXELS = Tetris.BOARD_WIDTH * Tetris.BLOCK_SIZE_PIXELS;
 
@@ -78,9 +78,13 @@ var Tetris = { };
     }
     
     // If there's a falling piece, draw it.
-    if (this.snapshot !== null && this.snapshot.piece) {
-      var piece = Tetris.Piece.fromSnapshot(this.snapshot.piece);
-      this.drawPiece(piece);
+    if (this.playerRef !== null) {
+      var player = Player.findByAttribute('userid',this.playerRef.userid);
+      if (player.piece) {
+        var piece = Tetris.Piece.fromSnapshot(player.piece);
+        this.drawPiece(piece);
+      };
+      
     }
 
     // If this isn't my board, dim it out with a 25% opacity black rectangle.
@@ -115,8 +119,8 @@ var Tetris = { };
    * Clear the board contents.
    */
   Tetris.Board.prototype.clear = function () {
-    for (var row = 0; row < Tetris.BOARD_HEIGHT; row++) {
-      this.setRow(row, Tetris.EMPTY_LINE);
+    for(key in this.playerRef.board){
+      this.setRow(key,Tetris.EMPTY_LINE);
     }
   };
 
@@ -247,8 +251,13 @@ var Tetris = { };
 
   Tetris.Board.prototype.getRow = function (y) {
     var row = (y < 10) ? ('0' + y) : ('' + y); // Pad row so they sort nicely in debugger. :-)
+    var rowContents;
+    if(this.playerRef && this.playerRef.board){
+      rowContents = this.playerRef.board[row] ? this.playerRef.board[row] : null;
+    }else{
+      rowContents = null;
+    }
 
-    var rowContents = this.snapshot === null ? null : this.snapshot.child('0/board/' + row);
     return rowContents || Tetris.EMPTY_LINE;
   };
 
@@ -313,7 +322,7 @@ var Tetris = { };
    * Create a piece from a Firebase snapshot representing a piece.
    */
   Tetris.Piece.fromSnapshot = function (snapshot) {
-    var piece = snapshot.val();
+    var piece = snapshot;
     return new Tetris.Piece(piece.pieceNum, piece.x, piece.y, piece.rotation);
   };
 
@@ -363,30 +372,28 @@ var Tetris = { };
   Tetris.Controller = function (tetrisRef) {
     this.tetrisRef = tetrisRef;
     this.createBoards();
-
-    var players = Player.all(),index;
-    for (var i=0;i<players.length;i++) {
-      var player = players[i],
+    console.log(this.tetrisRef.length);
+    var index;
+    for (var i=0;i<this.tetrisRef.length;i++) {
+      var player = this.tetrisRef[i],
           display = player.name;
       if (!player.online) {
         display += '(offline)';
       };
-      if(player.userid == tetrisRef.userid){
-        index = i;
-      }
+  
       $('.player_name'+i).text(display);
     };
     // $('.player_name'+index).text(tetrisRef.name);
 
-    this.playingState = Tetris.PlayingState.Joining;
-    this.tryToJoin(index);
+    this.playingState = Tetris.PlayingState.Playing;
+    this.startPlaying(0);
   };
 
 
   Tetris.Controller.prototype.createBoards = function () {
     this.boards = [];
     for(var i = 0; i <= 1; i++) {
-      var playerRef = this.tetrisRef.child(i);
+      var playerRef = this.tetrisRef[i];
       var canvas = $('#canvas' + i).get(0);
       this.boards.push(new Tetris.Board(canvas, playerRef));
     }
@@ -424,8 +431,8 @@ var Tetris = { };
    * Once we've joined, enable controlling our player.
    */
   Tetris.Controller.prototype.startPlaying = function (playerNum) {
-    this.myPlayerRef = this.tetrisRef.child(playerNum);
-    this.opponentPlayerRef = this.tetrisRef.child((1 - playerNum));
+    this.myPlayerRef = this.tetrisRef[playerNum];
+    this.opponentPlayerRef = this.tetrisRef[(1 - playerNum)];
     this.myBoard = this.boards[playerNum];
     this.myBoard.isMyBoard = true;
     this.myBoard.draw();
@@ -599,7 +606,7 @@ var Tetris = { };
 
 
   Tetris.Controller.prototype.restartGame = function () {
-    this.opponentPlayerRef.child('restart').set(1);
+    // this.opponentPlayerRef.child('restart').set(1);
     this.resetMyBoardAndPiece();
   };
 

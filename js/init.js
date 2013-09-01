@@ -12,23 +12,26 @@ sync = {
 Nimbus.Auth.setup(sync);
 
 window.realtime_update_callback = function() {
-  for (var i = 0; i < controllers.length; i++) {
-    console.log('tell controller to draw');
-    var userid = controllers[i].myBoard.playerRef.userid;
-    controllers[i].myBoard.snapshot = Player.findByAttribute('userid',userid);
-    // console.log(controllers[i].myBoard);
-    controllers[i].myBoard.draw();
+  for (var i = 0; i < controllers.boards.length; i++) {
+    var board = controllers.boards[i];
+    console.log('tell controller to draw board '+i);
+
+    if (board && board.playerRef) {
+      board.snapshot = board.playerRef;
+      board.draw();
+    }else{
+      console.log('player not online...');  
+    }
   };
   return console.log('updated...');
 };
-window.controllers = [];
 
 Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'restart']);
 
 Player.prototype.child = function(key) {
   var i, keys, result;
   key = key.toString();
-  result = Player.all();
+  result = this;
   keys = key.split('/');
   i = 0;
   while (i < keys.length) {
@@ -62,14 +65,14 @@ Nimbus.Auth.set_app_ready(function() {
         if (one.userId === player.userid) {
           console.log('player ' + player.name + ' online');
           player.online = true;
-          var controller = new Tetris.Controller(player);
-          controllers.push(controller);
+          
         }
         player.save();
         break;
       }
       _results.push(player.save());
     }
+    window.controllers = new Tetris.Controller(Player.all());
     return _results;
   }
 });
@@ -79,7 +82,6 @@ window.set_player = function(data, target) {
   player = Player.findByAttribute('userid', data.userId);
   if (!player) {
     player = Player.create();
-    player.email = data.email;
     player.userid = data.userId;
     player.name = data.displayName;
   }
