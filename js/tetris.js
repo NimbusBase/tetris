@@ -403,7 +403,7 @@ var Tetris = { };
     var current = JSON.parse(localStorage['current']),self=this;
     // Use a transaction to make sure we don't conflict with other people trying to join.
     for (var i = 0; i < this.tetrisRef.length; i++) {
-      if(this.tetrisRef[i].userid = current.userId){
+      if(this.tetrisRef[i].userid == current.userId){
         this.myPlayerRef = this.tetrisRef[i];
       }
     };
