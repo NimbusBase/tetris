@@ -119,8 +119,8 @@ var Tetris = { };
    * Clear the board contents.
    */
   Tetris.Board.prototype.clear = function () {
-    for(key in this.playerRef.board){
-      this.setRow(key,Tetris.EMPTY_LINE);
+    for (var row = 0; row < Tetris.BOARD_HEIGHT; row++) {
+      this.setRow(row, Tetris.EMPTY_LINE);
     }
   };
 
@@ -252,8 +252,9 @@ var Tetris = { };
   Tetris.Board.prototype.getRow = function (y) {
     var row = (y < 10) ? ('0' + y) : ('' + y); // Pad row so they sort nicely in debugger. :-)
     var rowContents;
-    if(this.playerRef && this.playerRef.board){
-      rowContents = this.playerRef.board[row] ? this.playerRef.board[row] : null;
+    if(this.playerRef){
+      var player = Player.findByAttribute('userid',this.playerRef.userid);
+      rowContents = player.board && player.board[row] ? player.board[row] : null;
     }else{
       rowContents = null;
     }
@@ -506,7 +507,9 @@ var Tetris = { };
           if (self.fallingPiece.y != newPiece.y) {
             self.resetGravity();
           }
-          newPiece.saveToPlayer(self.myPlayerRef);
+          var player = Player.findByAttribute('userid',self.myPlayerRef.userid);
+          self.fallingPiece = newPiece;
+          newPiece.saveToPlayer(player);
         }
         return false; // handled
       }
