@@ -7,6 +7,9 @@ sync =
 delete localStorage['Player']
 Nimbus.Auth.setup(sync)
 window.realtime_update_callback = ()->
+	if !controllers
+		return
+	
 	console.log('updated...')
 	online = Player.findAllByAttribute('online',true)
 	restart = Player.findAllByAttribute('restart',1)

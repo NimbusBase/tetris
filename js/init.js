@@ -15,6 +15,9 @@ Nimbus.Auth.setup(sync);
 
 window.realtime_update_callback = function() {
   var avatar, board, boards, canvas, join, one, online, over, player, restart, _i, _j, _k, _l, _len, _len1, _len2, _len3;
+  if (!controllers) {
+    return;
+  }
   console.log('updated...');
   online = Player.findAllByAttribute('online', true);
   restart = Player.findAllByAttribute('restart', 1);
