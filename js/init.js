@@ -8,86 +8,67 @@ sync = {
     "app_name": "tetris"
   }
 };
+
 delete localStorage['Player'];
+
 Nimbus.Auth.setup(sync);
 
 window.realtime_update_callback = function() {
-  // if (!controllers) {
-  //   return;
-  // };
-  var players = Player.all(),
-      online = Player.findAllByAttribute('online',true),
-      restart = Player.findAllByAttribute('restart',1),
-      over = Player.findAllByAttribute('over',1);
-  for (var i = 0; i < controllers.boards.length; i++) {
-    var board = controllers.boards[i];
-    
+  var avatar, board, boards, canvas, join, one, online, over, player, restart, _i, _j, _k, _l, _len, _len1, _len2, _len3;
+  console.log('updated...');
+  online = Player.findAllByAttribute('online', true);
+  restart = Player.findAllByAttribute('restart', 1);
+  over = Player.findAllByAttribute('over', 1);
+  boards = controller.boards;
+  for (_i = 0, _len = boards.length; _i < _len; _i++) {
+    board = boards[_i];
     if (board && board.playerRef) {
       board.snapshot = board.playerRef;
       board.draw();
     }
-  };
- 
-  
-  //watch for restart
+  }
   if (restart.length) {
-    for (var i = 0; i < controllers.boards.length; i++) {
-      var board = controllers.boards[i];
-      // board.empty();
+    for (_j = 0, _len1 = restart.length; _j < _len1; _j++) {
+      one = restart[_j];
+      one.restart = 0;
+      one.save();
     }
-
-    // controllers.restartGame();
-    for (var i = 0; i < restart.length; i++) {
-      restart[i].restart = 0;
-      restart[i].save();
-    };
     controllers.myBoard.clear();
     controllers.resetGravity();
-    return;
-  };
-
-  // //watch for game over
-  // if (over.length) {
-  //   for (var i = 0; i < over.length; i++) {
-  //     over[i].over = 0;
-  //     over[i].save();
-  //   };
-
-  //   for (var i = 0; i < players.length; i++) {
-  //     if (players[i].restart!=1) {
-  //       //show player[i] win
-  //       console.log('player '+players[i].name+'  win;');
-  //       controllers.pause();
-  //       return;
-  //     };
-  //   };
-  // };
-
-  //watch for join
-  if (controllers.playercount != online.length && controllers.playercount<2) {
-    console.log('new player coming in and will be added');
-    var join = Player.findByAttribute('state',1);
+  }
+  if (over.length) {
+    for (_k = 0, _len2 = over.length; _k < _len2; _k++) {
+      one = over[_k];
+      one.over = 0;
+      one.save();
+    }
+    for (_l = 0, _len3 = players.length; _l < _len3; _l++) {
+      player = players[_l];
+      if (player.over !== 1) {
+        log('player ' + player.name + ' win');
+        controller.pause();
+        return;
+      }
+    }
+  }
+  if (controllers.playercount !== online.length && controllers.playercount < 2) {
+    join = Player.findByAttribute('state', 1);
     if (join) {
-      var canvas = $('#canvas' + controllers.playercount).get(0);
-      controllers.boards.push(new Tetris.Board(canvas,join));
-
-      var avatar = join.avatar.indexOf('http')== -1 ? 'https:'+join.avatar : join.avatar;
-      $('#avatar'+controllers.playercount).attr('src',avatar);
-      $('.player_name'+controllers.playercount).text(join.name);
-      controllers.playercount++;
-    };
-  };
-  // //check offline
-
-
-
+      canvas = $('#canvas' + controllers.playercount).get(0);
+      boards.push(new Tetris.Board(canvas, join));
+      if (join.avatar.indexOf('http') === -1) {
+        avatar = 'https:' + join.avatar;
+      } else {
+        avatar = join.avatar;
+      }
+      $('#avatar' + controllers.playercount).attr('src', avatar);
+      $('.player_name' + controllers.playercount).text(join.name);
+      return controllers.playercount++;
+    }
+  }
 };
 
-window.is_player_online = function(id){
-  return true;
-}
-
-Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'avatar','restart','state','over']);
+Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'avatar', 'restart', 'state', 'over']);
 
 Player.prototype.child = function(key) {
   var i, keys, result;
@@ -103,12 +84,11 @@ Player.prototype.child = function(key) {
 };
 
 Nimbus.Auth.set_app_ready(function() {
-  var collabrators, data, me, one, player, _i, _j, _k, _len, _len1, _len2, _ref, _results;
+  var collabrators, data, me, one, player, _i, _j, _k, _len, _len1, _len2, _ref;
   if (Nimbus.Auth.authorized()) {
-    //hide mask
+    $('#login').text('Logout');
     $('.mask').hide();
     Player.sync_all();
-    $('#login').text('Logout');
     collabrators = doc.getCollaborators();
     for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
       one = collabrators[_i];
@@ -118,9 +98,8 @@ Nimbus.Auth.set_app_ready(function() {
         me = one;
       }
     }
-    
+    data = Player.findByAttribute('userid', me.userId);
     _ref = Player.all();
-    _results = [];
     for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
       player = _ref[_j];
       player.online = false;
@@ -133,12 +112,10 @@ Nimbus.Auth.set_app_ready(function() {
         }
         player.over = 0;
         player.restart = 0;
-        player.save();
       }
-      _results.push(player.save());
+      player.save();
     }
-    window.controllers = new Tetris.Controller(Player.all());
-    return _results;
+    return window.controllers = new Tetris.Controller(Player.all());
   }
 });
 
@@ -156,19 +133,17 @@ window.set_player = function(data, target) {
   player.restart = 0;
   player.over = 0;
   player.avatar = data.photoUrl;
-
   return player.save();
 };
 
 window.fill_player = function(user) {
-  var player, players, _i, _len;
+  var offline, player, players;
   players = Player.all();
   if (players.length < 2) {
     set_player(user);
     return;
-  }else if(players.length==2){
-    //replace offline player or waint
-    player = Player.findByAttribute('userid',user.userId);
+  } else if (player.length === 2) {
+    player = Player.findByAttribute('userid', userId);
     if (player) {
       player.online = true;
       player.avatar = user.photoUrl;
@@ -177,49 +152,43 @@ window.fill_player = function(user) {
       player.over = 0;
       player.save();
       return;
-    }else{
-      //find offline player
-      offline = Player.findByAttribute('online',false);
+    } else {
+      offline = Player.findByAttribute('offline', false);
       if (offline) {
         offline.destroy();
         set_player(user);
         return;
-      };
-    };
+      }
+    }
   }
-
   return console.log('waiting...');
 };
 
 $(function() {
   $('a#login').click(function() {
-      console.log('auth start...');
-      Nimbus.Auth.authorize('GDrive');
+    console.log('auth start...');
+    Nimbus.Auth.authorize('GDrive');
     return false;
   });
-
   $('a#logout').click(function() {
-      //stop the game first
-      controllers.pause();      
-      Nimbus.Auth.logout();
-      location.reload();
+    controllers.pause();
+    Nimbus.Auth.logout();
+    location.reload();
     return false;
   });
-
-  $('#restart').click(function(){
-
-    var id=controllers.myPlayerRef.userid,
-        player = Player.findByAttribute('userid',id);
-    player.restart =1;
+  $('#restart').click(function() {
+    var id, player;
+    id = controllers.myPlayerRef.userid;
+    player = Player.findByAttribute('userid', id);
+    player.restart = 1;
     player.save();
     return false;
   });
-
   $('#invite').click(function() {
     var email;
     email = $('#invite_email').val();
     Nimbus.Share.add_share_user_real(email, function(user) {
-      console.log('permission granted...');
+      return console.log('file shared');
     });
     return false;
   });
