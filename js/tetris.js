@@ -128,7 +128,6 @@ var Tetris = { };
         self.context.lineTo(left+radius,top);  
         self.context.quadraticCurveTo(left,top,left,top+radius);
         self.context.fill();
-
       });
   };
 
@@ -408,6 +407,9 @@ var Tetris = { };
           display += '(offline)';
         }
         $('.player_name'+i).text(display);
+        var avatar = playerRef.avatar.indexOf('http')== -1 ? 'https:'+playerRef.avatar : playerRef.avatar;
+        $('#avatar'+i).attr('src',avatar);
+        this.playercount = i+1;
       };
     }
   };
@@ -507,7 +509,6 @@ var Tetris = { };
           break;
       }
 
-      console.log('roate: '+ keyCode);
       if (newPiece !== null) {
         // If the new piece position / rotation is valid, update self.fallingPiece and firebase.
         if (!self.myBoard.checkForPieceCollision(newPiece)) {
@@ -552,7 +553,6 @@ var Tetris = { };
     // If we've hit the bottom, add the (pre-drop) piece to the board and create a new piece.
     if (this.myBoard.checkForPieceCollision(newPiece)) {
       this.myBoard.addLandedPiece(this.fallingPiece);
-      console.log('landing the plane...');
       // Check for completed lines and if appropriate, push extra rows to our opponent.
       var completedRows = this.myBoard.removeCompletedRows();
       // var rowsToPush = (completedRows === 4) ? 4 : completedRows - 1;
@@ -612,15 +612,25 @@ var Tetris = { };
 
 
   Tetris.Controller.prototype.gameOver = function () {
-    this.restartGame();
+    clearInterval(this.gravityIntervalId);
+    //show scrores ,win or lose
+
   };
+
+  Tetris.Controller.prototype.pause = function(){
+    clearInterval(this.gravityIntervalId);
+  }
 
 
   Tetris.Controller.prototype.restartGame = function () {
     // this.opponentPlayerRef.child('restart').set(1);
     this.resetMyBoardAndPiece();
+    this.resetGravity();
   };
 
+  Tetris.Controller.prototype.resume = function(){
+    this.resetGravity();
+  }
 
   Tetris.Controller.prototype.resetMyBoardAndPiece = function () {
     this.myBoard.clear();

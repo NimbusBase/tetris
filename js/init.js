@@ -8,25 +8,51 @@ sync = {
     "app_name": "tetris"
   }
 };
-
+delete localStorage['Player'];
 Nimbus.Auth.setup(sync);
 
 window.realtime_update_callback = function() {
+  if (!controllers) {
+    return;
+  };
+  var players = Player.all(),
+      online = Player.findAllByAttribute('online',true);
+
+  //watch for restart
+
+  //watch for join
+  if (controllers.playercount != online.length && controllers.playercount<2) {
+    console.log('new player coming in and will be added');
+    var join = Player.findByAttribute('state',1);
+    if (join) {
+      var canvas = $('#canvas' + controllers.playercount).get(0);
+      controllers.boards.push(new Tetris.Board(canvas,join));
+
+      var avatar = join.avatar.indexOf('http')== -1 ? 'https:'+join.avatar : join.avatar;
+      $('#avatar'+controllers.playercount).attr('src',avatar);
+      $('.player_name'+controllers.playercount).text(join.name);
+      controllers.playercount++;
+
+    };
+  };
+  //check offline
+
+
   for (var i = 0; i < controllers.boards.length; i++) {
     var board = controllers.boards[i];
-    //todo check if player is online
     
-
     if (board && board.playerRef) {
       board.snapshot = board.playerRef;
       board.draw();
-    }else{
-      console.log('player not online...');  
     }
   };
 };
 
-Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'restart','state']);
+window.is_player_online = function(id){
+  return true;
+}
+
+Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'avatar','restart','state']);
 
 Player.prototype.child = function(key) {
   var i, keys, result;
@@ -83,8 +109,12 @@ window.set_player = function(data, target) {
     player = Player.create();
     player.userid = data.userId;
     player.name = data.displayName;
+    player.avatar = data.photoUrl;
   }
   player.online = true;
+  player.state = 1;
+  player.avatar = data.photoUrl;
+
   return player.save();
 };
 
@@ -94,25 +124,34 @@ window.fill_player = function(user) {
   if (players.length < 2) {
     set_player(user);
     return;
-  }
-  for (_i = 0, _len = players.length; _i < _len; _i++) {
-    player = players[_i];
-    if (player.userid === user.userId) {
+  }else if(players.length==2){
+    //replace offline player or waint
+    player = Player.findByAttribute('userid',user.userId);
+    if (player) {
       player.online = true;
+      player.avatar = data.photoUrl;
+      player.state = 1;
       player.save();
       return;
-    } else if (!player.online) {
-      player.destroy();
-      set_player(user);
-      return;
-    }
+    }else{
+      //find offline player
+      offline = Player.findByAttribute('online',false);
+      if (offline) {
+        offline.destroy();
+        set_player(user);
+        return;
+      };
+    };
   }
+
   return console.log('waiting...');
 };
 
 $(function() {
   $('a#login').click(function() {
     if ($(this).text() == 'Logout') {
+      //stop the game first
+      contrllers.pause();      
       Nimbus.Auth.logout();
     }else{
       console.log('auth start...');
