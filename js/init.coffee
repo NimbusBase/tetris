@@ -11,7 +11,7 @@ window.realtime_update_callback = ()->
 	online = Player.findAllByAttribute('online',true)
 	restart = Player.findAllByAttribute('restart',1)
 	over = Player.findAllByAttribute('over',1)
-	boards = controller.boards
+	boards = controllers.boards
 	# do the drawing
 	for board in boards
 		if board and board.playerRef
@@ -34,7 +34,7 @@ window.realtime_update_callback = ()->
 		for player in players
 			if player.over!=1
 				log 'player '+player.name+' win'
-				controller.pause()
+				controllers.pause()
 				return
 
 	# watch for join
