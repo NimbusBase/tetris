@@ -25,10 +25,13 @@ input:focus{
 	outline: none;
 }
 
-.players{padding: 10px;}
+.players{padding: 10px;position: relative;}
 .player{width: 45%}
 .player p{text-align: center;}
 .player1{margin-right: 9%;}
 .player canvas{border:1px solid #ddd;margin: 0 auto;display: block;}
 
 .player .avatar{-webkit-border-radius: 2px;border-radius: 2px;}
+#game{position: relative;}
+.controls{position: absolute;top: 50%;left: 44%;letter-spacing: normal;z-index: 10;}
+.controls a{text-decoration: none;}

@@ -16,10 +16,29 @@ window.realtime_update_callback = function() {
     return;
   };
   var players = Player.all(),
-      online = Player.findAllByAttribute('online',true);
-
+      online = Player.findAllByAttribute('online',true),
+      restart = Player.findAllByAttribute('restart',1),
+      over = Player.findAllByAttribute('over',1);
+  
   //watch for restart
+  if (restart.length) {
+    controllers.restartGame();
+    return;
+  };
+  //watch for game over
+  if (over.length) {
+    for (var i = 0; i < players.length; i++) {
+      if (players[i].restart!=1) {
+        //show player[i] win
+        console.log('player '+players[i].name+'  win;');
+        contorllers.gameOver();
+        return;
+      };
+    };
+  };
 
+
+  
   //watch for join
   if (controllers.playercount != online.length && controllers.playercount<2) {
     console.log('new player coming in and will be added');
@@ -52,7 +71,7 @@ window.is_player_online = function(id){
   return true;
 }
 
-Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'avatar','restart','state']);
+Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'avatar','restart','state','over']);
 
 Player.prototype.child = function(key) {
   var i, keys, result;
@@ -70,6 +89,7 @@ Player.prototype.child = function(key) {
 Nimbus.Auth.set_app_ready(function() {
   var collabrators, data, me, one, player, _i, _j, _k, _len, _len1, _len2, _ref, _results;
   if (Nimbus.Auth.authorized()) {
+    Player.sync_all();
     $('#login').text('Logout');
     collabrators = doc.getCollaborators();
     for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
@@ -93,6 +113,8 @@ Nimbus.Auth.set_app_ready(function() {
           console.log('player ' + player.name + ' online');
           player.online = true;
         }
+        player.over = 0;
+        player.restart = 0;
         player.save();
       }
       _results.push(player.save());
@@ -113,6 +135,8 @@ window.set_player = function(data, target) {
   }
   player.online = true;
   player.state = 1;
+  player.restart = 0;
+  player.over = 0;
   player.avatar = data.photoUrl;
 
   return player.save();
@@ -129,8 +153,10 @@ window.fill_player = function(user) {
     player = Player.findByAttribute('userid',user.userId);
     if (player) {
       player.online = true;
-      player.avatar = data.photoUrl;
+      player.avatar = user.photoUrl;
       player.state = 1;
+      player.restart = 0;
+      player.over = 0;
       player.save();
       return;
     }else{
@@ -156,10 +182,18 @@ $(function() {
     }else{
       console.log('auth start...');
       Nimbus.Auth.authorize('GDrive');
-    };
-   
+    };  
     return false;
   });
+  $('#restart').click(function(){
+
+    var id=controllers.myPlayerRef.userid,
+        player = Player.findByAttribute('userid',id);
+    player.restart =1;
+    player.save();
+    return false;
+  });
+
   $('#invite').click(function() {
     var email;
     email = $('#invite_email').val();

@@ -563,8 +563,14 @@ var Tetris = { };
       newPiece = new Tetris.Piece();
 
       // Is the board full?
-      if (this.myBoard.checkForPieceCollision(newPiece))
+      if (this.myBoard.checkForPieceCollision(newPiece)){
+        var id = this.myPlayerRef.userid,
+            player = Player.findByAttribute('userid',id);
+        player.over = 1;
+        player.save(); 
         this.gameOver();
+      }
+        
     }
 
     newPiece.saveToPlayer(this.myPlayerRef);
@@ -634,6 +640,11 @@ var Tetris = { };
 
   Tetris.Controller.prototype.resetMyBoardAndPiece = function () {
     this.myBoard.clear();
+     var id=controllers.myPlayerRef.userid,
+        player = Player.findByAttribute('userid',id);
+    player.restart =0;
+    player.over =0;
+    player.save();
     var newPiece = new Tetris.Piece();
     newPiece.saveToPlayer(this.myPlayerRef);
   };
