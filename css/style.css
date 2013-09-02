@@ -1,3 +1,4 @@
+p,ul{margin: 0.5em 0;}
 #top_bar{
 	height: 70px;
 	background: rgb(24, 33, 61);
@@ -24,10 +25,10 @@ input:focus{
 	outline: none;
 }
 
-.players{padding: 20px;}
+.players{padding: 10px;}
 .player{width: 45%}
 .player p{text-align: center;}
 .player1{margin-right: 9%;}
 .player canvas{border:1px solid #ddd;margin: 0 auto;display: block;}
 
-
+.player .avatar{-webkit-border-radius: 2px;border-radius: 2px;}
