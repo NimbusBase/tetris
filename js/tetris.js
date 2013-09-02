@@ -135,11 +135,19 @@ var Tetris = { };
   /**
    * Clear the board contents.
    */
+  Tetris.Board.prototype.empty = function () {
+    var player = Player.findByAttribute('userid',this.playerRef.userid);
+    player.board = [];
+    player.save();
+  };
+
   Tetris.Board.prototype.clear = function () {
     for (var row = 0; row < Tetris.BOARD_HEIGHT; row++) {
       this.setRow(row, Tetris.EMPTY_LINE);
     }
   };
+
+
 
 
   /**
@@ -446,6 +454,9 @@ var Tetris = { };
    * Once we've joined, enable controlling our player.
    */
   Tetris.Controller.prototype.startPlaying = function () {
+    //set playing
+    var id = this.myPlayerRef.userid,
+        player;
     this.myBoard.draw();
 
     this.initializePiece();

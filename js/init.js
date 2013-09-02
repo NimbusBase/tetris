@@ -22,23 +22,35 @@ window.realtime_update_callback = function() {
   
   //watch for restart
   if (restart.length) {
-    controllers.restartGame();
+    for (var i = 0; i < controllers.boards.length; i++) {
+      var board = controllers.boards[i];
+      // board.empty();
+    }
+    controllers.myBoard.empty();
+    // controllers.restartGame();
+    for (var i = 0; i < restart.length; i++) {
+      restart[i].restart = 0;
+      restart[i].save();
+    };
     return;
   };
   //watch for game over
   if (over.length) {
+    for (var i = 0; i < over.length; i++) {
+      over[i].over = 0;
+      over[i].save();
+    };
+
     for (var i = 0; i < players.length; i++) {
       if (players[i].restart!=1) {
         //show player[i] win
         console.log('player '+players[i].name+'  win;');
-        controllers.gameOver();
+        controllers.pause();
         return;
       };
     };
   };
 
-
-  
   //watch for join
   if (controllers.playercount != online.length && controllers.playercount<2) {
     console.log('new player coming in and will be added');
@@ -51,7 +63,6 @@ window.realtime_update_callback = function() {
       $('#avatar'+controllers.playercount).attr('src',avatar);
       $('.player_name'+controllers.playercount).text(join.name);
       controllers.playercount++;
-
     };
   };
   //check offline
@@ -89,6 +100,8 @@ Player.prototype.child = function(key) {
 Nimbus.Auth.set_app_ready(function() {
   var collabrators, data, me, one, player, _i, _j, _k, _len, _len1, _len2, _ref, _results;
   if (Nimbus.Auth.authorized()) {
+    //hide mask
+    $('.mask').hide();
     Player.sync_all();
     $('#login').text('Logout');
     collabrators = doc.getCollaborators();
@@ -175,16 +188,19 @@ window.fill_player = function(user) {
 
 $(function() {
   $('a#login').click(function() {
-    if ($(this).text() == 'Logout') {
-      //stop the game first
-      contrllers.pause();      
-      Nimbus.Auth.logout();
-    }else{
       console.log('auth start...');
       Nimbus.Auth.authorize('GDrive');
-    };  
     return false;
   });
+
+  $('a#logout').click(function() {
+      //stop the game first
+      controllers.pause();      
+      Nimbus.Auth.logout();
+      location.reload();
+    return false;
+  });
+
   $('#restart').click(function(){
 
     var id=controllers.myPlayerRef.userid,
