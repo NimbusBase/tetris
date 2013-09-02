@@ -12,13 +12,22 @@ delete localStorage['Player'];
 Nimbus.Auth.setup(sync);
 
 window.realtime_update_callback = function() {
-  if (!controllers) {
-    return;
-  };
+  // if (!controllers) {
+  //   return;
+  // };
   var players = Player.all(),
       online = Player.findAllByAttribute('online',true),
       restart = Player.findAllByAttribute('restart',1),
       over = Player.findAllByAttribute('over',1);
+  for (var i = 0; i < controllers.boards.length; i++) {
+    var board = controllers.boards[i];
+    
+    if (board && board.playerRef) {
+      board.snapshot = board.playerRef;
+      board.draw();
+    }
+  };
+ 
   
   //watch for restart
   if (restart.length) {
@@ -26,30 +35,33 @@ window.realtime_update_callback = function() {
       var board = controllers.boards[i];
       // board.empty();
     }
-    controllers.myBoard.empty();
+
     // controllers.restartGame();
     for (var i = 0; i < restart.length; i++) {
       restart[i].restart = 0;
       restart[i].save();
     };
+    controllers.myBoard.clear();
+    controllers.resetGravity();
     return;
   };
-  //watch for game over
-  if (over.length) {
-    for (var i = 0; i < over.length; i++) {
-      over[i].over = 0;
-      over[i].save();
-    };
 
-    for (var i = 0; i < players.length; i++) {
-      if (players[i].restart!=1) {
-        //show player[i] win
-        console.log('player '+players[i].name+'  win;');
-        controllers.pause();
-        return;
-      };
-    };
-  };
+  // //watch for game over
+  // if (over.length) {
+  //   for (var i = 0; i < over.length; i++) {
+  //     over[i].over = 0;
+  //     over[i].save();
+  //   };
+
+  //   for (var i = 0; i < players.length; i++) {
+  //     if (players[i].restart!=1) {
+  //       //show player[i] win
+  //       console.log('player '+players[i].name+'  win;');
+  //       controllers.pause();
+  //       return;
+  //     };
+  //   };
+  // };
 
   //watch for join
   if (controllers.playercount != online.length && controllers.playercount<2) {
@@ -65,17 +77,10 @@ window.realtime_update_callback = function() {
       controllers.playercount++;
     };
   };
-  //check offline
+  // //check offline
 
 
-  for (var i = 0; i < controllers.boards.length; i++) {
-    var board = controllers.boards[i];
-    
-    if (board && board.playerRef) {
-      board.snapshot = board.playerRef;
-      board.draw();
-    }
-  };
+
 };
 
 window.is_player_online = function(id){

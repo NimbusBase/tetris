@@ -135,11 +135,11 @@ var Tetris = { };
   /**
    * Clear the board contents.
    */
-  Tetris.Board.prototype.empty = function () {
-    var player = Player.findByAttribute('userid',this.playerRef.userid);
-    player.board = [];
-    player.save();
-  };
+  // Tetris.Board.prototype.empty = function () {
+  //   var player = Player.findByAttribute('userid',this.playerRef.userid);
+  //   player.board = [];
+  //   player.save();
+  // };
 
   Tetris.Board.prototype.clear = function () {
     for (var row = 0; row < Tetris.BOARD_HEIGHT; row++) {
@@ -455,8 +455,8 @@ var Tetris = { };
    */
   Tetris.Controller.prototype.startPlaying = function () {
     //set playing
-    var id = this.myPlayerRef.userid,
-        player;
+    // var id = this.myPlayerRef.userid,
+    //     player;
     this.myBoard.draw();
 
     this.initializePiece();
