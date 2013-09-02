@@ -31,7 +31,7 @@ window.realtime_update_callback = function() {
       if (players[i].restart!=1) {
         //show player[i] win
         console.log('player '+players[i].name+'  win;');
-        contorllers.gameOver();
+        controllers.gameOver();
         return;
       };
     };
