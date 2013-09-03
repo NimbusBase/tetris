@@ -133,37 +133,39 @@ Nimbus.Auth.set_app_ready(function() {
 });
 
 window.sync_players_on_callback = function() {
-  var collabrators, data, me, one, player, _i, _j, _k, _len, _len1, _len2, _ref;
   if (Nimbus.Auth.authorized()) {
-    $('#login').text('Logout');
-    $('.mask').hide();
-    collabrators = doc.getCollaborators();
-    for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
-      one = collabrators[_i];
-      if (one.isMe) {
-        localStorage['current'] = JSON.stringify(one);
-        fill_player(one);
-        me = one;
-      }
-    }
-    data = Player.findByAttribute('userid', me.userId);
-    _ref = Player.all();
-    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-      player = _ref[_j];
-      player.online = false;
-      player.state = 0;
-      for (_k = 0, _len2 = collabrators.length; _k < _len2; _k++) {
-        one = collabrators[_k];
-        if (one.userId === player.userid) {
-          console.log('player ' + player.name + ' online');
-          player.online = true;
+    return Player.sync_all(function() {
+      var collabrators, data, me, one, player, _i, _j, _k, _len, _len1, _len2, _ref;
+      $('#login').text('Logout');
+      $('.mask').hide();
+      collabrators = doc.getCollaborators();
+      for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
+        one = collabrators[_i];
+        if (one.isMe) {
+          localStorage['current'] = JSON.stringify(one);
+          fill_player(one);
+          me = one;
         }
-        player.over = 0;
-        player.restart = 0;
       }
-      player.save();
-    }
-    return window.controllers = new Tetris.Controller(Player.all());
+      data = Player.findByAttribute('userid', me.userId);
+      _ref = Player.all();
+      for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+        player = _ref[_j];
+        player.online = false;
+        player.state = 0;
+        for (_k = 0, _len2 = collabrators.length; _k < _len2; _k++) {
+          one = collabrators[_k];
+          if (one.userId === player.userid) {
+            console.log('player ' + player.name + ' online');
+            player.online = true;
+          }
+          player.over = 0;
+          player.restart = 0;
+        }
+        player.save();
+      }
+      return window.controllers = new Tetris.Controller(Player.all());
+    });
   }
 };
 

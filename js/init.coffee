@@ -109,31 +109,33 @@ Nimbus.Auth.set_app_ready(()->
 window.sync_players_on_callback = ()->
 	# check auth
 	if Nimbus.Auth.authorized()
-		$('#login').text('Logout')
-		$('.mask').hide()
-		# Player.sync_all()
-		# sync player,board
-		collabrators = doc.getCollaborators()
-		for one in collabrators
-			if one.isMe
-				localStorage['current'] = JSON.stringify(one);
-				fill_player(one)
-				me = one
-
-		data = Player.findByAttribute('userid',me.userId)
-
-		for player in Player.all()
-			player.online = false
-			player.state = 0;
+		Player.sync_all(()->
+			$('#login').text('Logout')
+			$('.mask').hide()
+			# sync player,board
+			collabrators = doc.getCollaborators()
 			for one in collabrators
-				if one.userId is player.userid
-					console.log('player '+player.name+' online')
-					player.online=true 
-				player.over = 0
-				player.restart = 0
+				if one.isMe
+					localStorage['current'] = JSON.stringify(one);
+					fill_player(one)
+					me = one
 
-			player.save()
-		window.controllers = new Tetris.Controller(Player.all())
+			data = Player.findByAttribute('userid',me.userId)
+
+			for player in Player.all()
+				player.online = false
+				player.state = 0;
+				for one in collabrators
+					if one.userId is player.userid
+						console.log('player '+player.name+' online')
+						player.online=true 
+					player.over = 0
+					player.restart = 0
+
+				player.save()
+			window.controllers = new Tetris.Controller(Player.all())
+		)
+		
 
 
 window.set_player = (data,target)->
