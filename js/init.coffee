@@ -4,17 +4,34 @@ sync =
 		"scope": "https://www.googleapis.com/auth/drive"
 		"app_name": "tetris"
 
-delete localStorage['Player']
 Nimbus.Auth.setup(sync)
 window.realtime_update_handler = (event,obj)->
-	if !controllers
+	if !window.controllers
 		return
-	
+	# stats
 	console.log('updated...')
 	online = Player.findAllByAttribute('online',true)
 	restart = Player.findAllByAttribute('restart',1)
 	over = Player.findAllByAttribute('over',1)
 	boards = controllers.boards
+	pause = Player.findAllByAttribute('pause',1)
+	resume = Player.findAllByAttribute('resume',1)
+	# watch for pause
+	if pause.length
+		controllers.pause()
+		for one in pause
+			one.pause = 0
+			one.save()
+		return
+	
+	# watch for resume
+	if resume.length
+		controller.resume()
+		for one in resume
+			one.resume = 0
+			one.save()
+		return
+
 	# do the drawing
 	for board in boards
 		if board and board.playerRef
@@ -23,23 +40,29 @@ window.realtime_update_handler = (event,obj)->
 	# restart the game
 	if restart.length
 		for one in restart
-			one.restart = 0
-			one.save()
+			if one.restart
+				one.restart = 0
+				one.save()
 
 		controllers.myBoard.clear()
 		controllers.resetGravity()
 	# game over
 	if over.length
+		controllers.pause()
+		if controllers.playercount is 2 and over.length is 2
+			console.log 'even..'
+		else if controller.playercount is 2
+			for player in players
+				if !player.over
+					log 'player '+player.name+' win'
+					break;			
+		else
+			console.log 'game over'
 		for one in over
-			one.over = 0
-			one.save()
-
-		for player in players
-			if player.over!=1
-				log 'player '+player.name+' win'
-				controllers.pause()
-				return
-
+			if one.over
+				one.over = 0
+				one.save()
+		return
 	# watch for join
 	if controllers.playercount!=online.length and controllers.playercount<2
 		join = Player.findByAttribute('state',1)
@@ -56,7 +79,7 @@ window.realtime_update_handler = (event,obj)->
 			controllers.playercount++
 
 		
-Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'avatar','restart','state','over'])
+Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'avatar','restart','pause','resume','state','over'])
 Player.prototype.child = (key)->
 	key = key.toString()
 	result = this
@@ -67,11 +90,25 @@ Player.prototype.child = (key)->
 		i++
 	result
 Nimbus.Auth.set_app_ready(()->
+	search = location.search.substr(1)
+	if search and search isnt c_file.id
+		load_new_file(search,()->
+			console.log 'loading new file'
+			sync_players_on_callback()
+		)
+		return
+	else
+		sync_players_on_callback()
+	
+)
+
+# sync_on_start
+window.sync_players_on_callback = ()->
 	# check auth
 	if Nimbus.Auth.authorized()
 		$('#login').text('Logout')
 		$('.mask').hide()
-		Player.sync_all()
+		# Player.sync_all()
 		# sync player,board
 		collabrators = doc.getCollaborators()
 		for one in collabrators
@@ -95,7 +132,6 @@ Nimbus.Auth.set_app_ready(()->
 			player.save()
 		window.controllers = new Tetris.Controller(Player.all())
 
-)
 
 window.set_player = (data,target)->
 	player = Player.findByAttribute('userid',data.userId)
@@ -149,6 +185,21 @@ $ ()->
 		false
 	)
 
+	$('#pause').click(()->
+		me = Player.findByAttribute('userid',controllers.myPlayerRef.userid)
+
+		if $(this).text() is 'Pause'
+			me.pause = 1
+			me.save()
+			controllers.pause()
+			$(this).text('Resume')
+		else
+			me.resume = 1
+			me.save()
+			controllers.resume()
+			$(this).text('Pause')
+	)
+
 	$('#restart').click(()->
 		id = controllers.myPlayerRef.userid
 		player = Player.findByAttribute('userid',id)
@@ -163,6 +214,9 @@ $ ()->
 		# check email
 		Nimbus.Share.add_share_user_real(email,(user)->
 			console.log('file shared')
+			link = location.origin + location.pathname + '?'+ window.c_file.id
+			alert('Copy and send this link to your friend: '+link)
+
 		)
 		false
 	)
