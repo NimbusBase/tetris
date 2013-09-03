@@ -411,9 +411,7 @@ var Tetris = { };
         var canvas = $('#canvas' + i).get(0);
         this.boards.push(new Tetris.Board(canvas, playerRef));
         display = playerRef.name;
-        if (!playerRef.online) {
-          display += '(offline)';
-        }
+        
         $('.player_name'+i).text(display);
         var avatar = playerRef.avatar.indexOf('http')== -1 ? 'https:'+playerRef.avatar : playerRef.avatar;
         $('#avatar'+i).attr('src',avatar);
