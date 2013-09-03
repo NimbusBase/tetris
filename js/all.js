@@ -3631,9 +3631,10 @@
     console.log("file loaded", doc);
     window.doc = doc;
     process_event = function(event) {
-      var a, model, obj;
+      var a, current_event, model, obj;
       log("PROCESS EVENT");
       log(event);
+      current_event = "NONE";
       if (event.oldValue != null) {
         obj = JSON.parse(event.oldValue);
       }
@@ -3645,7 +3646,8 @@
       model = Nimbus.dictModel[obj.type];
       if (event.oldValue === null) {
         log("add event");
-        return model.add_from_cloud(obj.id);
+        model.add_from_cloud(obj.id);
+        current_event = "CREATE";
       } else if (event.newValue === null) {
         log("delete event");
         window.currently_syncing = true;
@@ -3653,11 +3655,16 @@
           a = model.find(obj.id);
           a.destroy();
         }
-        return window.currently_syncing = false;
+        window.currently_syncing = false;
+        current_event = "DELETE";
       } else {
         log("changing the data inside a entry event");
-        realtime_update_callback();
-        return model.update_to_local(obj);
+        model.update_to_local(obj);
+        current_event = "UPDATE";
+      }
+      console.log("EVENT: ", current_event, " OBJ: ", obj);
+      if (window.realtime_update_handler != null) {
+        return window.realtime_update_handler(current_event, obj);
       }
     };
     todo = doc.getModel().getRoot().get("todo");
@@ -3720,6 +3727,13 @@
         }
       });
     });
+  };
+
+  window.load_new_file = function(file_id, callback) {
+    if (callback != null) {
+      window.real_time_callback = callback;
+    }
+    return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, handleErrors);
   };
 
   Nimbus.Client.Dropbox = {

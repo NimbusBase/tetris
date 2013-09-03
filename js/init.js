@@ -13,7 +13,7 @@ delete localStorage['Player'];
 
 Nimbus.Auth.setup(sync);
 
-window.realtime_update_callback = function() {
+window.realtime_update_handler = function(event, obj) {
   var avatar, board, boards, canvas, join, one, online, over, player, restart, _i, _j, _k, _l, _len, _len1, _len2, _len3;
   if (!controllers) {
     return;

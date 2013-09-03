@@ -6,7 +6,7 @@ sync =
 
 delete localStorage['Player']
 Nimbus.Auth.setup(sync)
-window.realtime_update_callback = ()->
+window.realtime_update_handler = (event,obj)->
 	if !controllers
 		return
 	
