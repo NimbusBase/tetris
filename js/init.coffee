@@ -1,3 +1,7 @@
+if location.search and location.search.substr(1) and !localStorage['doc_id']
+	localStorage['doc_id'] = location.search.substr(1)
+	location.href = location.origin+location.pathname
+
 sync = 
 	'GDrive':
 		'key':'361504558285.apps.googleusercontent.com'
@@ -90,7 +94,7 @@ Player.prototype.child = (key)->
 		i++
 	result
 Nimbus.Auth.set_app_ready(()->
-	search = location.search.substr(1)
+	search = localStorage['doc_id']
 	if search and search isnt c_file.id
 		load_new_file(search,()->
 			console.log 'loading new file'
