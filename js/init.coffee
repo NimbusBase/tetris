@@ -1,4 +1,4 @@
-if location.search and location.search.substr(1) and !localStorage['doc_id']
+if location.search and location.search.substr(1) and localStorage['doc_id']!=location.search.substr(1)
 	localStorage['doc_id'] = location.search.substr(1)
 	location.href = location.origin+location.pathname
 
@@ -19,21 +19,6 @@ window.realtime_update_handler = (event,obj)->
 	boards = controllers.boards
 	pause = Player.findAllByAttribute('pause',1)
 	resume = Player.findAllByAttribute('resume',1)
-	# watch for pause
-	if pause.length
-		controllers.pause()
-		for one in pause
-			one.pause = 0
-			one.save()
-		return
-	
-	# watch for resume
-	if resume.length
-		controllers.resume()
-		for one in resume
-			one.resume = 0
-			one.save()
-		return
 
 	# do the drawing
 	for board in boards
@@ -66,6 +51,20 @@ window.realtime_update_handler = (event,obj)->
 				one.over = 0
 				one.save()
 		return
+
+	# watch for pause
+	if pause.length
+		controllers.pause()
+	
+	# watch for resume
+	if resume.length
+		controllers.resume()
+		for one in resume
+			one.resume = 0
+			one.pause = 0
+			one.save()
+		return
+
 	# watch for join
 	if controllers.playercount!=online.length and controllers.playercount<2
 		join = Player.findByAttribute('state',1)
@@ -157,8 +156,8 @@ window.fill_player = (user)->
 	if players.length<2
 		set_player(user)
 		return
-	else if player.length is 2
-		player = Player.findByAttribute('userid',userId)
+	else if players.length is 2
+		player = Player.findByAttribute('userid',user.userId)
 		if player
 			player.online = true
 			player.avatar = user.photoUrl
@@ -184,7 +183,6 @@ $ ()->
 	)
 
 	$('a#logout').click(()->
-		controllers.pause()
 		Nimbus.Auth.logout()
 		location.reload()
 		false
@@ -220,8 +218,7 @@ $ ()->
 		Nimbus.Share.add_share_user_real(email,(user)->
 			console.log('file shared')
 			link = location.origin + location.pathname + '?'+ window.c_file.id
-			alert('Copy and send this link to your friend: '+link)
-
+			$.prompt('Copy and send this link to your friend: ' + link)
 		)
 		false
 	)
