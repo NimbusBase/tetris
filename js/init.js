@@ -21,7 +21,6 @@ window.realtime_update_handler = function(event, obj) {
   if (!window.controllers) {
     return;
   }
-  console.log('updated...');
   online = Player.findAllByAttribute('online', true);
   restart = Player.findAllByAttribute('restart', 1);
   over = Player.findAllByAttribute('over', 1);

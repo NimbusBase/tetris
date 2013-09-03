@@ -13,7 +13,6 @@ window.realtime_update_handler = (event,obj)->
 	if !window.controllers
 		return
 	# stats
-	console.log('updated...')
 	online = Player.findAllByAttribute('online',true)
 	restart = Player.findAllByAttribute('restart',1)
 	over = Player.findAllByAttribute('over',1)
