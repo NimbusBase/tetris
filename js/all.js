@@ -3663,7 +3663,7 @@
       }
       log("EVENT: ", current_event, " OBJ: ", obj);
       if (window.realtime_update_handler != null) {
-        return window.realtime_update_handler(current_event, obj);
+        return window.realtime_update_handler(current_event, obj,event.isLocal);
       }
     };
     todo = doc.getModel().getRoot().get("todo");
