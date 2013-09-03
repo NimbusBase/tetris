@@ -3661,7 +3661,7 @@
         model.update_to_local(obj);
         current_event = "UPDATE";
       }
-      console.log("EVENT: ", current_event, " OBJ: ", obj);
+      log("EVENT: ", current_event, " OBJ: ", obj);
       if (window.realtime_update_handler != null) {
         return window.realtime_update_handler(current_event, obj);
       }
