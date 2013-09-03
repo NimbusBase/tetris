@@ -3571,24 +3571,23 @@
       return window.currently_syncing = false;
     },
     sync_all: function(cb) {
+      var _this = this;
       log("syncs all the data, normally happens at the start of a program or coming back from offline");
       this.load_all_from_cloud();
-      return this.sync_model_base_algo();
-      /*    
-      window.current_syncing = new DelayedOp => 
-        log("call back sync called")
-        window.current_syncing = new DelayedOp => 
-          window.current_syncing = null
-          cb() if cb?
-        
-        @sync_model_base_algo()
-      
-        window.current_syncing.ready()
-      
-      @load_all_from_cloud()
-      window.current_syncing.ready()
-      */
-
+      this.sync_model_base_algo();
+      window.current_syncing = new DelayedOp(function() {
+        log("call back sync called");
+        window.current_syncing = new DelayedOp(function() {
+          window.current_syncing = null;
+          if (cb != null) {
+            return cb();
+          }
+        });
+        _this.sync_model_base_algo();
+        return window.current_syncing.ready();
+      });
+      this.load_all_from_cloud();
+      return window.current_syncing.ready();
     },
     load_all_from_cloud: function() {
       var content, x, _i, _len, _ref, _results;
@@ -3662,7 +3661,7 @@
         model.update_to_local(obj);
         current_event = "UPDATE";
       }
-      log("EVENT: ", current_event, " OBJ: ", obj);
+      console.log("EVENT: ", current_event, " OBJ: ", obj);
       if (window.realtime_update_handler != null) {
         return window.realtime_update_handler(current_event, obj);
       }
