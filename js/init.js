@@ -37,7 +37,7 @@ window.realtime_update_handler = function(event, obj) {
     return;
   }
   if (resume.length) {
-    controller.resume();
+    controllers.resume();
     for (_j = 0, _len1 = resume.length; _j < _len1; _j++) {
       one = resume[_j];
       one.resume = 0;
@@ -67,7 +67,7 @@ window.realtime_update_handler = function(event, obj) {
     controllers.pause();
     if (controllers.playercount === 2 && over.length === 2) {
       console.log('even..');
-    } else if (controller.playercount === 2) {
+    } else if (controllers.playercount === 2) {
       for (_m = 0, _len4 = players.length; _m < _len4; _m++) {
         player = players[_m];
         if (!player.over) {

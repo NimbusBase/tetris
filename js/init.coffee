@@ -29,7 +29,7 @@ window.realtime_update_handler = (event,obj)->
 	
 	# watch for resume
 	if resume.length
-		controller.resume()
+		controllers.resume()
 		for one in resume
 			one.resume = 0
 			one.save()
@@ -54,7 +54,7 @@ window.realtime_update_handler = (event,obj)->
 		controllers.pause()
 		if controllers.playercount is 2 and over.length is 2
 			console.log 'even..'
-		else if controller.playercount is 2
+		else if controllers.playercount is 2
 			for player in players
 				if !player.over
 					log 'player '+player.name+' win'
