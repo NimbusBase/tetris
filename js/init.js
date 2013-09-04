@@ -34,7 +34,7 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     }
   }
   if (restart.length) {
-    if (isLocal) {
+    if (!isLocal) {
       for (_j = 0, _len1 = restart.length; _j < _len1; _j++) {
         one = restart[_j];
         if (one.restart) {

@@ -23,7 +23,7 @@ window.realtime_update_handler = (event,obj,isLocal)->
 			board.draw()
 	# restart the game
 	if restart.length
-		if isLocal
+		if !isLocal
 			for one in restart
 				if one.restart
 					one.restart = 0
