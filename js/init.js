@@ -12,7 +12,7 @@ sync = {
 Nimbus.Auth.setup(sync);
 
 window.realtime_update_handler = function(event, obj, isLocal) {
-  var avatar, board, boards, canvas, join, one, online, over, pause, player, restart, resume, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m;
+  var avatar, board, boards, canvas, join, one, online, over, pause, player, restart, resume, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n;
   if (!window.controllers) {
     return;
   }
@@ -30,11 +30,16 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     }
   }
   if (restart.length) {
-    for (_j = 0, _len1 = restart.length; _j < _len1; _j++) {
-      one = restart[_j];
-      if (one.restart && !isLocal) {
-        one.restart = 0;
-        one.save();
+    if (isLocal) {
+      for (_j = 0, _len1 = restart.length; _j < _len1; _j++) {
+        one = restart[_j];
+        if (one.restart) {
+          one.restart = 0;
+          one.pause = 0;
+          one.over = 0;
+          one.resume = 0;
+          one.save();
+        }
       }
     }
     controllers.myBoard.clear();
@@ -65,19 +70,29 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     return;
   }
   if (pause.length) {
+    $('#pause').text('Resume');
     controllers.pause();
+    if (!isLocal) {
+      for (_m = 0, _len4 = pause.length; _m < _len4; _m++) {
+        one = pause[_m];
+        one.pause = 0;
+        one.save();
+      }
+    }
+    return;
   }
   if (resume.length) {
     controllers.resume();
+    $('#pause').text('Pause');
     if (!isLocal) {
-      for (_m = 0, _len4 = resume.length; _m < _len4; _m++) {
-        one = resume[_m];
+      for (_n = 0, _len5 = resume.length; _n < _len5; _n++) {
+        one = resume[_n];
         one.resume = 0;
         one.pause = 0;
         one.save();
       }
-      return;
     }
+    return;
   }
   if (controllers.playercount !== online.length && controllers.playercount < 2) {
     join = Player.findByAttribute('state', 1);

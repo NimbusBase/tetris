@@ -23,10 +23,14 @@ window.realtime_update_handler = (event,obj,isLocal)->
 			board.draw()
 	# restart the game
 	if restart.length
-		for one in restart
-			if one.restart and !isLocal
-				one.restart = 0
-				one.save()
+		if isLocal
+			for one in restart
+				if one.restart
+					one.restart = 0
+					one.pause = 0
+					one.over = 0
+					one.resume = 0
+					one.save()
 
 		controllers.myBoard.clear()
 		controllers.resetGravity()
@@ -50,17 +54,24 @@ window.realtime_update_handler = (event,obj,isLocal)->
 
 	# watch for pause
 	if pause.length
+		$('#pause').text('Resume')
 		controllers.pause()
+		if !isLocal
+			for one in pause
+				one.pause = 0
+				one.save()
+		return
 	
 	# watch for resume
 	if resume.length
 		controllers.resume()
+		$('#pause').text('Pause')
 		if !isLocal
 			for one in resume
 				one.resume = 0
 				one.pause = 0
 				one.save()
-			return
+		return
 
 	# watch for join
 	if controllers.playercount!=online.length and controllers.playercount<2
