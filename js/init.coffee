@@ -19,7 +19,7 @@ window.realtime_update_handler = (event,obj,isLocal)->
 	boards = controllers.boards
 	pause = Player.findAllByAttribute('pause',1)
 	resume = Player.findAllByAttribute('resume',1)
-
+	players = Player.all()
 	# do the drawing
 	for board in boards
 		if board and board.playerRef
@@ -29,13 +29,12 @@ window.realtime_update_handler = (event,obj,isLocal)->
 	if restart.length
 		if !isLocal
 			for one in players
-				if !one.restart
-					one.piece = null
-					one.restart = 0
-					one.pause = 0
-					one.over = 0
-					one.resume = 0
-					one.save()
+				one.piece = null
+				one.restart = 0
+				one.pause = 0
+				one.over = 0
+				one.resume = 0
+				one.save()
 
 		controllers.myBoard.clear()
 		controllers.resetGravity()
@@ -61,11 +60,6 @@ window.realtime_update_handler = (event,obj,isLocal)->
 	if pause.length
 		$('#pause').text('Resume')
 		controllers.pause()
-		if !isLocal
-			for one in pause
-				one.pause = 0
-				one.save()
-		return
 	
 	# watch for resume
 	if resume.length

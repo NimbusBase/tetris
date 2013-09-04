@@ -17,7 +17,7 @@ sync = {
 Nimbus.Auth.setup(sync);
 
 window.realtime_update_handler = function(event, obj, isLocal) {
-  var avatar, board, boards, canvas, join, one, online, over, pause, player, restart, resume, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n;
+  var avatar, board, boards, canvas, join, one, online, over, pause, player, players, restart, resume, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m;
   if (!window.controllers) {
     return;
   }
@@ -27,6 +27,7 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   boards = controllers.boards;
   pause = Player.findAllByAttribute('pause', 1);
   resume = Player.findAllByAttribute('resume', 1);
+  players = Player.all();
   for (_i = 0, _len = boards.length; _i < _len; _i++) {
     board = boards[_i];
     if (board && board.playerRef) {
@@ -38,14 +39,12 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     if (!isLocal) {
       for (_j = 0, _len1 = players.length; _j < _len1; _j++) {
         one = players[_j];
-        if (!one.restart) {
-          one.piece = null;
-          one.restart = 0;
-          one.pause = 0;
-          one.over = 0;
-          one.resume = 0;
-          one.save();
-        }
+        one.piece = null;
+        one.restart = 0;
+        one.pause = 0;
+        one.over = 0;
+        one.resume = 0;
+        one.save();
       }
     }
     controllers.myBoard.clear();
@@ -78,21 +77,13 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   if (pause.length) {
     $('#pause').text('Resume');
     controllers.pause();
-    if (!isLocal) {
-      for (_m = 0, _len4 = pause.length; _m < _len4; _m++) {
-        one = pause[_m];
-        one.pause = 0;
-        one.save();
-      }
-    }
-    return;
   }
   if (resume.length) {
     controllers.resume();
     $('#pause').text('Pause');
     if (!isLocal) {
-      for (_n = 0, _len5 = resume.length; _n < _len5; _n++) {
-        one = resume[_n];
+      for (_m = 0, _len4 = resume.length; _m < _len4; _m++) {
+        one = resume[_m];
         one.resume = 0;
         one.pause = 0;
         one.save();
