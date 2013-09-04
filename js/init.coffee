@@ -29,11 +29,13 @@ window.realtime_update_handler = (event,obj,isLocal)->
 	# restart the game
 	if restart.length
 		controllers.myBoard.clear()
-		me.restart = 0
-		me.over = 0
-		me.pause = 0
-		me.resume = 0
-		me.save()
+		if !isLocal
+			for one in players
+				one.restart = 0
+				one.over = 0
+				one.pause = 0
+				one.resume = 0
+				one.save()
 		
 		controllers.restartGame()
 		return
@@ -60,16 +62,11 @@ window.realtime_update_handler = (event,obj,isLocal)->
 		if !isLocal
 			$('#pause').text('Resume')
 			controllers.pause()
-		return
+	
 	# watch for resume
 	if resume.length
 		controllers.resume()
 		$('#pause').text('Pause')
-		if pause
-			for one in pause
-				one.pause = 0
-				one.save()
-		
 		if !isLocal
 			for one in resume
 				one.resume = 0

@@ -38,11 +38,14 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   }
   if (restart.length) {
     controllers.myBoard.clear();
-    me.restart = 0;
-    me.over = 0;
-    me.pause = 0;
-    me.resume = 0;
-    me.save();
+    if (!isLocal) {
+        one = me;
+        one.restart = 0;
+        one.over = 0;
+        one.pause = 0;
+        one.resume = 0;
+        one.save();
+    }
     controllers.restartGame();
     return;
   }
@@ -51,8 +54,8 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     if (controllers.playercount === 2 && over.length === 2) {
       console.log('even..');
     } else if (controllers.playercount === 2) {
-      for (_j = 0, _len1 = players.length; _j < _len1; _j++) {
-        player = players[_j];
+      for (_k = 0, _len2 = players.length; _k < _len2; _k++) {
+        player = players[_k];
         if (!player.over) {
           log('player ' + player.name + ' win');
           break;
@@ -61,8 +64,8 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     } else {
       console.log('game over');
     }
-    for (_k = 0, _len2 = over.length; _k < _len2; _k++) {
-      one = over[_k];
+    for (_l = 0, _len3 = over.length; _l < _len3; _l++) {
+      one = over[_l];
       if (one.over && !isLocal) {
         one.over = 0;
         one.save();
@@ -75,18 +78,10 @@ window.realtime_update_handler = function(event, obj, isLocal) {
       $('#pause').text('Resume');
       controllers.pause();
     }
-    return;
   }
   if (resume.length) {
     controllers.resume();
     $('#pause').text('Pause');
-    if (pause) {
-      for (_l = 0, _len3 = pause.length; _l < _len3; _l++) {
-        one = pause[_l];
-        one.pause = 0;
-        one.save();
-      }
-    }
     if (!isLocal) {
       for (_m = 0, _len4 = resume.length; _m < _len4; _m++) {
         one = resume[_m];
