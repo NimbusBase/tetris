@@ -118,6 +118,19 @@ Nimbus.Auth.set_app_ready(function() {
     load_new_file(search, function() {
       console.log('loading new file');
       return sync_players_on_callback();
+    }, function(e) {
+      if (e.type === gapi.drive.realtime.ErrorType.TOKEN_REFRESH_REQUIRED) {
+        return authorizer.authorize();
+      } else if (e.type === gapi.drive.realtime.ErrorType.CLIENT_ERROR) {
+        if (localStorage['doc_id']) {
+          localStorage.clear();
+          return location.reload();
+        } else {
+          return alert("An Error happened: " + e.message);
+        }
+      } else {
+        return console.log('Unknown error:' + e.message);
+      }
     });
   } else {
     return sync_players_on_callback();

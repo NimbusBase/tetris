@@ -94,6 +94,18 @@ Nimbus.Auth.set_app_ready(()->
 		load_new_file(search,()->
 			console.log 'loading new file'
 			sync_players_on_callback()
+		,(e)->
+			if e.type is gapi.drive.realtime.ErrorType.TOKEN_REFRESH_REQUIRED
+				authorizer.authorize()
+			else if e.type is gapi.drive.realtime.ErrorType.CLIENT_ERROR
+				if localStorage['doc_id']
+					localStorage.clear()
+					location.reload()
+				else
+					alert "An Error happened: " + e.message
+			else
+				console.log 'Unknown error:'+e.message
+
 		)
 		return
 	else
