@@ -39,7 +39,7 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   if (restart.length) {
     controllers.myBoard.clear();
     if (!isLocal) {
-        one = me;
+        one = Player.findByAttribute('restart',1);
         one.restart = 0;
         one.over = 0;
         one.pause = 0;
