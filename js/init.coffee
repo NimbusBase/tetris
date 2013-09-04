@@ -1,7 +1,3 @@
-if location.search and location.search.substr(1) and localStorage['doc_id']!=location.search.substr(1)
-	localStorage['doc_id'] = location.search.substr(1)
-	location.href = location.origin+location.pathname
-
 sync = 
 	'GDrive':
 		'key':'361504558285.apps.googleusercontent.com'
@@ -9,7 +5,7 @@ sync =
 		"app_name": "tetris"
 
 Nimbus.Auth.setup(sync)
-window.realtime_update_handler = (event,obj)->
+window.realtime_update_handler = (event,obj,isLocal)->
 	if !window.controllers
 		return
 	# stats
@@ -28,7 +24,7 @@ window.realtime_update_handler = (event,obj)->
 	# restart the game
 	if restart.length
 		for one in restart
-			if one.restart
+			if one.restart and !isLocal
 				one.restart = 0
 				one.save()
 
@@ -47,7 +43,7 @@ window.realtime_update_handler = (event,obj)->
 		else
 			console.log 'game over'
 		for one in over
-			if one.over
+			if one.over and !isLocal
 				one.over = 0
 				one.save()
 		return
@@ -59,11 +55,12 @@ window.realtime_update_handler = (event,obj)->
 	# watch for resume
 	if resume.length
 		controllers.resume()
-		for one in resume
-			one.resume = 0
-			one.pause = 0
-			one.save()
-		return
+		if !isLocal
+			for one in resume
+				one.resume = 0
+				one.pause = 0
+				one.save()
+			return
 
 	# watch for join
 	if controllers.playercount!=online.length and controllers.playercount<2
@@ -176,6 +173,10 @@ window.fill_player = (user)->
 	console.log 'waiting...'
 		
 $ ()->
+	if location.search and location.search.substr(1) and localStorage['doc_id']!=location.search.substr(1)
+		localStorage['doc_id'] = location.search.substr(1)
+		location.href = location.origin+location.pathname
+
 	$('a#login').click(()->
 		console.log 'auth start...'
 		Nimbus.Auth.authorize('GDrive')

@@ -3720,6 +3720,7 @@
           console.log("file not there");
           Nimbus.Client.GDrive.insertFile("", Nimbus.Auth.app_name, 'application/vnd.google-apps.drive-sdk', null, function(data) {
             console.log("finished insertFile", data);
+            window.c_file = data;
             return gapi.drive.realtime.load(data.id, onFileLoaded, initializeModel, handleErrors);
           });
           return console.log("need to create file for app");
