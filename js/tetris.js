@@ -490,7 +490,10 @@ var Tetris = { };
     $(document).on('keydown', function (evt) {
       if (self.fallingPiece === null)
         return; // piece isn't initialized yet.
-
+      var pause = Player.findAllByAttribute('pause', 1);
+      if (pause.length) {
+        return;
+      };
       var keyCode = evt.which;
       var key = { space:32, left:37, up:38, right:39, down:40 };
 

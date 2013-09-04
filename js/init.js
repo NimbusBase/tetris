@@ -39,14 +39,12 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   if (restart.length) {
     controllers.myBoard.clear();
     if (!isLocal) {
-      for (_j = 0, _len1 = players.length; _j < _len1; _j++) {
-        one = players[_j];
+        one = me;
         one.restart = 0;
         one.over = 0;
         one.pause = 0;
         one.resume = 0;
         one.save();
-      }
     }
     controllers.restartGame();
     return;
