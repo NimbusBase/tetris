@@ -32,7 +32,7 @@ window.realtime_update_handler = (event,obj,isLocal)->
 		me.over = 0
 		me.pause = 0
 		me.resume = 0
-
+		me.save()
 		controllers.myBoard.clear()
 		controllers.resetGravity()
 	# game over
