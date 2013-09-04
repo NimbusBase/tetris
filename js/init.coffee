@@ -213,7 +213,7 @@ $ ()->
 	)
 
 	$('#pause').click(()->
-		 me = Player.findByAttribute('userid',controllers.myPlayerRef.userid)
+		me = Player.findByAttribute('userid',controllers.myPlayerRef.userid)
 
 		if $(this).text() is 'Pause'
 			me.pause = 1

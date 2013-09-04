@@ -249,8 +249,21 @@ $(function() {
   });
   $('#pause').click(function() {
     var me;
-    return me = Player.findByAttribute('userid', controllers.myPlayerRef.userid);
-  }, $(this).text() === 'Pause' ? (me.pause = 1, me.resume = 0, me.save(), controllers.pause(), $(this).text('Resume')) : (me.resume = 1, me.pause = 0, me.save(), controllers.resume(), $(this).text('Pause')));
+    me = Player.findByAttribute('userid', controllers.myPlayerRef.userid);
+    if ($(this).text() === 'Pause') {
+      me.pause = 1;
+      me.resume = 0;
+      me.save();
+      controllers.pause();
+      return $(this).text('Resume');
+    } else {
+      me.resume = 1;
+      me.pause = 0;
+      me.save();
+      controllers.resume();
+      return $(this).text('Pause');
+    }
+  });
   $('#restart').click(function() {
     var me;
     me = Player.findByAttribute('userid', controllers.myPlayerRef.userid);
