@@ -140,12 +140,14 @@ window.sync_players_on_callback = ()->
 			for player in Player.all()
 				player.online = false
 				player.state = 0;
+				player.over = 0
+				player.restart = 0
+				player.pause = 0
+				player.resume = 0
 				for one in collabrators
 					if one.userId is player.userid
 						console.log('player '+player.name+' online')
 						player.online=true 
-					player.over = 0
-					player.restart = 0
 
 				player.save()
 			window.controllers = new Tetris.Controller(Player.all())

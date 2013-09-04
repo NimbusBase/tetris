@@ -164,14 +164,16 @@ window.sync_players_on_callback = function() {
         player = _ref[_j];
         player.online = false;
         player.state = 0;
+        player.over = 0;
+        player.restart = 0;
+        player.pause = 0;
+        player.resume = 0;
         for (_k = 0, _len2 = collabrators.length; _k < _len2; _k++) {
           one = collabrators[_k];
           if (one.userId === player.userid) {
             console.log('player ' + player.name + ' online');
             player.online = true;
           }
-          player.over = 0;
-          player.restart = 0;
         }
         player.save();
       }
