@@ -20,6 +20,7 @@ window.realtime_update_handler = (event,obj,isLocal)->
 	pause = Player.findAllByAttribute('pause',1)
 	resume = Player.findAllByAttribute('resume',1)
 	players = Player.all()
+	me = Player.findByAttribute('userid',controllers.myPlayerRef.userid)
 	# do the drawing
 	for board in boards
 		if board and board.playerRef
@@ -27,14 +28,10 @@ window.realtime_update_handler = (event,obj,isLocal)->
 			board.draw()
 	# restart the game
 	if restart.length
-		if !isLocal
-			for one in players
-				one.piece = null
-				one.restart = 0
-				one.pause = 0
-				one.over = 0
-				one.resume = 0
-				one.save()
+		me.restart = 0
+		me.over = 0
+		me.pause = 0
+		me.resume = 0
 
 		controllers.myBoard.clear()
 		controllers.resetGravity()
@@ -225,10 +222,10 @@ $ ()->
 
 	$('#restart').click(()->
 		id = controllers.myPlayerRef.userid
-		player = Player.findByAttribute('userid',id)
-		player.restart = 1
-		player.piece = null
-		player.save()
+		for player in Player.all()
+			player.restart = 1
+			player.piece = null
+			player.save()
 		controllers.fallingPiece = null
 		false
 	)
