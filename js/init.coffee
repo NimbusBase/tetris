@@ -1,3 +1,7 @@
+if location.search and location.search.substr(1)
+	localStorage['doc_id'] = location.search.substr(1)
+	location.href = location.origin+location.pathname
+
 sync = 
 	'GDrive':
 		'key':'361504558285.apps.googleusercontent.com'
@@ -24,8 +28,9 @@ window.realtime_update_handler = (event,obj,isLocal)->
 	# restart the game
 	if restart.length
 		if !isLocal
-			for one in restart
-				if one.restart
+			for one in players
+				if !one.restart
+					one.piece = null
 					one.restart = 0
 					one.pause = 0
 					one.over = 0
@@ -196,9 +201,6 @@ window.fill_player = (user)->
 	console.log 'waiting...'
 		
 $ ()->
-	if location.search and location.search.substr(1) and localStorage['doc_id']!=location.search.substr(1)
-		localStorage['doc_id'] = location.search.substr(1)
-		location.href = location.origin+location.pathname
 
 	$('a#login').click(()->
 		console.log 'auth start...'
@@ -231,7 +233,9 @@ $ ()->
 		id = controllers.myPlayerRef.userid
 		player = Player.findByAttribute('userid',id)
 		player.restart = 1
+		player.piece = null
 		player.save()
+		controllers.fallingPiece = null
 		false
 	)
 
