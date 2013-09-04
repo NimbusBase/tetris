@@ -17,7 +17,7 @@ sync = {
 Nimbus.Auth.setup(sync);
 
 window.realtime_update_handler = function(event, obj, isLocal) {
-  var avatar, board, boards, canvas, join, me, one, online, over, pause, player, players, restart, resume, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m;
+  var avatar, board, boards, canvas, join, me, one, online, over, pause, player, players, restart, resume, _i, _j, _k, _l, _len, _len1, _len2, _len3;
   if (!window.controllers) {
     return;
   }
@@ -39,12 +39,12 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   if (restart.length) {
     controllers.myBoard.clear();
     if (!isLocal) {
-        one = Player.findByAttribute('restart',1);
-        one.restart = 0;
-        one.over = 0;
-        one.pause = 0;
-        one.resume = 0;
-        one.save();
+      one = Player.findByAttribute('restart', 1);
+      one.restart = 0;
+      one.over = 0;
+      one.pause = 0;
+      one.resume = 0;
+      one.save();
     }
     controllers.restartGame();
     return;
@@ -54,8 +54,8 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     if (controllers.playercount === 2 && over.length === 2) {
       console.log('even..');
     } else if (controllers.playercount === 2) {
-      for (_k = 0, _len2 = players.length; _k < _len2; _k++) {
-        player = players[_k];
+      for (_j = 0, _len1 = players.length; _j < _len1; _j++) {
+        player = players[_j];
         if (!player.over) {
           log('player ' + player.name + ' win');
           break;
@@ -64,8 +64,8 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     } else {
       console.log('game over');
     }
-    for (_l = 0, _len3 = over.length; _l < _len3; _l++) {
-      one = over[_l];
+    for (_k = 0, _len2 = over.length; _k < _len2; _k++) {
+      one = over[_k];
       if (one.over && !isLocal) {
         one.over = 0;
         one.save();
@@ -83,8 +83,8 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     controllers.resume();
     $('#pause').text('Pause');
     if (!isLocal) {
-      for (_m = 0, _len4 = resume.length; _m < _len4; _m++) {
-        one = resume[_m];
+      for (_l = 0, _len3 = resume.length; _l < _len3; _l++) {
+        one = resume[_l];
         one.resume = 0;
         one.pause = 0;
         one.save();
