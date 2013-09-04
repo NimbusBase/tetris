@@ -3729,11 +3729,11 @@
     });
   };
 
-  window.load_new_file = function(file_id, callback) {
+  window.load_new_file = function(file_id, callback,exception_handle) {
     if (callback != null) {
       window.real_time_callback = callback;
     }
-    return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, handleErrors);
+    return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, exception_handle);
   };
 
   Nimbus.Client.Dropbox = {
