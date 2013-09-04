@@ -226,34 +226,6 @@ var Tetris = { };
     return completedRows;
   };
 
-
-  /**
-   * Generate the specified number of junk rows at the bottom of the board. Return true if the added
-   * rows overflowed the board (in which case the player loses).
-   */
-  Tetris.Board.prototype.addJunkRows = function (numRows) {
-    var overflow = false;
-    // First, check if any blocks are going to overflow off the top of the screen.
-    var topRowContents = this.getRow(numRows - 1);
-    overflow = topRowContents.match(/[^ ]/);
-
-    // Shift rows up to make room for the new rows.
-    for (var i = 0; i < Tetris.BOARD_HEIGHT - numRows; i++) {
-      var moveLineContents = this.getRow(i + numRows);
-      this.setRow(i, moveLineContents);
-    }
-
-    // Fill the bottom with junk rows that are full except for a single random gap.
-    var gap = Math.floor(Math.random() * Tetris.FILLED_LINE.length);
-    var junkRow = Tetris.FILLED_LINE.substring(0, gap) + ' ' + Tetris.FILLED_LINE.substring(gap + 1);
-    for (i = Tetris.BOARD_HEIGHT - numRows; i < Tetris.BOARD_HEIGHT; i++) {
-      this.setRow(i, junkRow);
-    }
-
-    return overflow;
-  };
-
-
   /**
    * Helper to enumerate the blocks that make up a particular piece.  Calls fn() for each block,
    * passing the x and y position of the block and the color value.  If includeInvalid is true, it
@@ -277,11 +249,13 @@ var Tetris = { };
   Tetris.Board.prototype.getRow = function (y) {
     var row = (y < 10) ? ('0' + y) : ('' + y); // Pad row so they sort nicely in debugger. :-)
     var rowContents;
-    if(this.playerRef){
-      var player = Player.findByAttribute('userid',this.playerRef.userid);
-      rowContents = player.board && player.board[row] ? player.board[row] : null;
-    }else{
-      rowContents = null;
+    var game =Game.first();
+    var playerRef = this.playerRef;
+
+    if (game.player0 && game.player0.userid == playerRef.userid) {
+      rowContents = game.player0.board[row] ? game.player0.board[row] : null;
+    }else if(game.player1 && game.player1.userid == playerRef.userid){
+      rowContents = game.player1.board[row] ? game.player1.board[row] : null;
     }
 
     return rowContents || Tetris.EMPTY_LINE;
@@ -299,17 +273,15 @@ var Tetris = { };
     if (rowContents === Tetris.EMPTY_LINE)
       rowContents = null; // delete empty lines so we get remove / added events in debugger. :-)
     // console.log('set row: '+row+' for '+this.playerRef.board);
-    var list = {};
-    var player = Player.findByAttribute('userid',this.playerRef.userid);
+    var game =Game.first();
+    var playerRef = this.playerRef;
 
-    if (!player.board) {
-      list = player.board = {};
-    }else{
-      list = player.board;
-    };
-    list[row] = rowContents;
-    player.board = list
-    player.save();
+    if (game.player0 && game.player0.userid == playerRef.userid) {
+      game.player0.board[row] = rowContents;
+    }else if(game.player1 && game.player1.userid == playerRef.userid){
+      game.player1.board[row] = rowContents;
+    }
+    game.save();
   };
 
 
@@ -318,11 +290,6 @@ var Tetris = { };
     rowContents = rowContents.substring(0, x) + val + rowContents.substring(x+1);
     this.setRow(y, rowContents);
   };
-
-  Tetris.Board.prototype.getMine = function(){
-
-  }
-
 
   /**
    * Immutable object representing a falling piece along with its rotation and board position.
@@ -363,9 +330,14 @@ var Tetris = { };
       x: this.x,
       y: this.y
     }
-    var player = Player.findByAttribute('userid',playerRef.userid);
-    player.piece = data;
-    player.save();
+    var game = Game.first();
+
+    if (game.player0 && game.player0.userid == playerRef.userid) {
+      game.player0.piece = data;
+    }else if(game.player1 && game.player1.userid == playerRef.userid){
+      game.player1.piece = data;
+    }
+    game.save();
   };
 
 
@@ -397,6 +369,13 @@ var Tetris = { };
   Tetris.PlayingState = { Watching: 0, Joining: 1, Playing: 2 };
   Tetris.Controller = function (tetrisRef) {
     this.tetrisRef = tetrisRef;
+    this.players = [];
+    if (tetrisRef.player0) {
+      this.players.push(tetrisRef.player0)
+    };
+    if (tetrisRef.player1) {
+      this.players.push(tetrisRef.player1)
+    };
     this.createBoards();
 
     this.tryToJoin();
@@ -405,13 +384,19 @@ var Tetris = { };
 
   Tetris.Controller.prototype.createBoards = function () {
     this.boards = [];
-    for(var i = 0; i <= 1; i++) {
-      var playerRef = this.tetrisRef[i],display;
+    var current = JSON.parse(localStorage['current']);
+    for(var i = 0; i <= this.players.length; i++) {
+      var playerRef = this.players[i],display;
       if (playerRef) {
+        //set current player
+        if (playerRef.userid == current.userId) {
+          this.myPlayerRef = playerRef;
+        };
+
         var canvas = $('#canvas' + i).get(0);
         this.boards.push(new Tetris.Board(canvas, playerRef));
         display = playerRef.name;
-        
+
         $('.player_name'+i).text(display);
         var avatar = playerRef.avatar.indexOf('http')== -1 ? 'https:'+playerRef.avatar : playerRef.avatar;
         $('#avatar'+i).attr('src',avatar);
@@ -427,16 +412,10 @@ var Tetris = { };
     // join the current user
     this.playingState = Tetris.PlayingState.Joining;
     var current = JSON.parse(localStorage['current']),self=this;
-    // Use a transaction to make sure we don't conflict with other people trying to join.
-    for (var i = 0; i < this.tetrisRef.length; i++) {
-      if(this.tetrisRef[i].userid == current.userId){
-        this.myPlayerRef = this.tetrisRef[i];
-      }
-    };
 
     for (var i = 0; i < self.boards.length; i++) {
       var board = self.boards[i];
-      if (board.playerRef.userid == this.myPlayerRef.userid) {
+      if (board.playerRef.userid == current.userId) {
         this.myBoard = board;
         this.myBoard.isMyBoard = true;
       };
@@ -576,9 +555,9 @@ var Tetris = { };
 
       // Is the board full?
       if (this.myBoard.checkForPieceCollision(newPiece)){
-        var player = Player.findByAttribute('userid',this.myPlayerRef.userid);
-        player.over = 1;
-        player.save();
+        var game = Game.first();
+        game.over = 1;
+        game.save();
         this.gameOver();
       }
     }
@@ -650,11 +629,6 @@ var Tetris = { };
 
   Tetris.Controller.prototype.resetMyBoardAndPiece = function () {
     this.myBoard.clear();
-     var id=controllers.myPlayerRef.userid,
-        player = Player.findByAttribute('userid',id);
-    player.restart =0;
-    player.over =0;
-    player.save();
     var newPiece = new Tetris.Piece();
     this.fallingPiece = newPiece;
     newPiece.saveToPlayer(this.myPlayerRef);
