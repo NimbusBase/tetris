@@ -225,9 +225,10 @@ $ ()->
 	$('#restart').click(()->
 		id = controllers.myPlayerRef.userid
 		for player in Player.all()
-			player.restart = 1
-			player.piece = null
-			player.save()
+			if player.online
+				player.restart = 1
+				player.piece = null
+				player.save()
 		controllers.fallingPiece = null
 		false
 	)

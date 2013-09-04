@@ -259,9 +259,11 @@ $(function() {
     _ref = Player.all();
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       player = _ref[_i];
-      player.restart = 1;
-      player.piece = null;
-      player.save();
+      if (player.online) {
+        player.restart = 1;
+        player.piece = null;
+        player.save();
+      }
     }
     controllers.fallingPiece = null;
     return false;
