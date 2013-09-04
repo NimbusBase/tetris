@@ -572,8 +572,12 @@ var Tetris = { };
       newPiece = new Tetris.Piece();
 
       // Is the board full?
-      if (this.myBoard.checkForPieceCollision(newPiece))
+      if (this.myBoard.checkForPieceCollision(newPiece)){
+        var player = Player.findByAttribute('userid',this.myPlayerRef.userid);
+        player.over = 1;
+        player.save();
         this.gameOver();
+      }
     }
 
     newPiece.saveToPlayer(this.myPlayerRef);
