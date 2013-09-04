@@ -17,7 +17,7 @@ sync = {
 Nimbus.Auth.setup(sync);
 
 window.realtime_update_handler = function(event, obj, isLocal) {
-  var avatar, board, boards, canvas, join, me, one, online, over, pause, player, players, restart, resume, _i, _j, _k, _l, _len, _len1, _len2, _len3;
+  var avatar, board, boards, canvas, join, me, one, online, over, pause, player, players, restart, resume, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m;
   if (!window.controllers) {
     return;
   }
@@ -37,20 +37,27 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     }
   }
   if (restart.length) {
-    me.restart = 0;
-    me.over = 0;
-    me.pause = 0;
-    me.resume = 0;
     controllers.myBoard.clear();
-    controllers.resetGravity();
+    if (!isLocal) {
+      for (_j = 0, _len1 = players.length; _j < _len1; _j++) {
+        one = players[_j];
+        one.restart = 0;
+        one.over = 0;
+        one.pause = 0;
+        one.resume = 0;
+        one.save();
+      }
+    }
+    controllers.restartGame();
+    return;
   }
   if (over.length) {
     controllers.pause();
     if (controllers.playercount === 2 && over.length === 2) {
       console.log('even..');
     } else if (controllers.playercount === 2) {
-      for (_j = 0, _len1 = players.length; _j < _len1; _j++) {
-        player = players[_j];
+      for (_k = 0, _len2 = players.length; _k < _len2; _k++) {
+        player = players[_k];
         if (!player.over) {
           log('player ' + player.name + ' win');
           break;
@@ -59,8 +66,8 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     } else {
       console.log('game over');
     }
-    for (_k = 0, _len2 = over.length; _k < _len2; _k++) {
-      one = over[_k];
+    for (_l = 0, _len3 = over.length; _l < _len3; _l++) {
+      one = over[_l];
       if (one.over && !isLocal) {
         one.over = 0;
         one.save();
@@ -69,15 +76,17 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     return;
   }
   if (pause.length) {
-    $('#pause').text('Resume');
-    controllers.pause();
+    if (!isLocal) {
+      $('#pause').text('Resume');
+      controllers.pause();
+    }
   }
   if (resume.length) {
     controllers.resume();
     $('#pause').text('Pause');
     if (!isLocal) {
-      for (_l = 0, _len3 = resume.length; _l < _len3; _l++) {
-        one = resume[_l];
+      for (_m = 0, _len4 = resume.length; _m < _len4; _m++) {
+        one = resume[_m];
         one.resume = 0;
         one.pause = 0;
         one.save();
@@ -240,32 +249,17 @@ $(function() {
   });
   $('#pause').click(function() {
     var me;
-    me = Player.findByAttribute('userid', controllers.myPlayerRef.userid);
-    if ($(this).text() === 'Pause') {
-      me.pause = 1;
-      me.save();
-      controllers.pause();
-      return $(this).text('Resume');
-    } else {
-      me.resume = 1;
-      me.save();
-      controllers.resume();
-      return $(this).text('Pause');
-    }
-  });
+    return me = Player.findByAttribute('userid', controllers.myPlayerRef.userid);
+  }, $(this).text() === 'Pause' ? (me.pause = 1, me.resume = 0, me.save(), controllers.pause(), $(this).text('Resume')) : (me.resume = 1, me.pause = 0, me.save(), controllers.resume(), $(this).text('Pause')));
   $('#restart').click(function() {
-    var id, player, _i, _len, _ref;
-    id = controllers.myPlayerRef.userid;
-    _ref = Player.all();
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      player = _ref[_i];
-      if (player.online) {
-        player.restart = 1;
-        player.piece = null;
-        player.save();
-      }
-    }
-    controllers.fallingPiece = null;
+    var me;
+    me = Player.findByAttribute('userid', controllers.myPlayerRef.userid);
+    me.restart = 1;
+    me.over = 0;
+    me.pause = 0;
+    me.resume = 0;
+    me.piece = null;
+    me.save();
     return false;
   });
   $('#invite').click(function() {

@@ -653,5 +653,6 @@ var Tetris = { };
     player.over =0;
     player.save();
     var newPiece = new Tetris.Piece();
+    this.fallingPiece = newPiece;
     newPiece.saveToPlayer(this.myPlayerRef);
   };

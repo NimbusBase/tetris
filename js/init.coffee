@@ -28,13 +28,17 @@ window.realtime_update_handler = (event,obj,isLocal)->
 			board.draw()
 	# restart the game
 	if restart.length
-		me.restart = 0
-		me.over = 0
-		me.pause = 0
-		me.resume = 0
-
 		controllers.myBoard.clear()
-		controllers.resetGravity()
+		if !isLocal
+			for one in players
+				one.restart = 0
+				one.over = 0
+				one.pause = 0
+				one.resume = 0
+				one.save()
+		
+		controllers.restartGame()
+		return
 	# game over
 	if over.length
 		controllers.pause()
@@ -55,8 +59,9 @@ window.realtime_update_handler = (event,obj,isLocal)->
 
 	# watch for pause
 	if pause.length
-		$('#pause').text('Resume')
-		controllers.pause()
+		if !isLocal
+			$('#pause').text('Resume')
+			controllers.pause()
 	
 	# watch for resume
 	if resume.length
@@ -208,28 +213,30 @@ $ ()->
 	)
 
 	$('#pause').click(()->
-		me = Player.findByAttribute('userid',controllers.myPlayerRef.userid)
+		 me = Player.findByAttribute('userid',controllers.myPlayerRef.userid)
 
 		if $(this).text() is 'Pause'
 			me.pause = 1
+			me.resume = 0
 			me.save()
 			controllers.pause()
 			$(this).text('Resume')
 		else
 			me.resume = 1
+			me.pause = 0
 			me.save()
 			controllers.resume()
 			$(this).text('Pause')
 	)
 
 	$('#restart').click(()->
-		id = controllers.myPlayerRef.userid
-		for player in Player.all()
-			if player.online
-				player.restart = 1
-				player.piece = null
-				player.save()
-		controllers.fallingPiece = null
+		me = Player.findByAttribute('userid',controllers.myPlayerRef.userid)
+		me.restart =1
+		me.over = 0
+		me.pause = 0 
+		me.resume = 0
+		me.piece = null
+		me.save()
 		false
 	)
 
