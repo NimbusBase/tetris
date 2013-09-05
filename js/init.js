@@ -138,25 +138,23 @@ window.sync_players_on_callback = function() {
         check_online();
         if (!game.player0) {
           game.player0 = player;
+        }else if (!game.player0.online) {
+          if ( game.player0.userid != player.userid) {
+            game.player0 = player;
+          }else{
+            game.player0.online = true;
+          };
         }else if(!game.player1){
           game.player1 = player;
-        }else{
-          if (!game.player0.online) {
-            if ( game.player0.userid != player.userid) {
-              game.player0 = player;
-            }else{
-              game.player0.online = true;
-            };
-          } else if (!game.player1.online) {
-            if (game.player1.userid != player.userid) {
-              game.player1 = player;
-            }else if(game.player1.userid == player.userid){
-              game.player1.online = true;
-            };
-          } else {
-            console.log('waiting');
-          }
-        };
+        }else if (!game.player1.online) {
+          if (game.player1.userid != player.userid) {
+            game.player1 = player;
+          }else if(game.player1.userid == player.userid){
+            game.player1.online = true;
+          };
+        } else {
+          console.log('waiting');
+        }
       }
 
       game.state = 2;
@@ -173,11 +171,16 @@ window.sync_players_on_callback = function() {
 window.check_online = function() {
   var collabrators, game, one, original, _i, _len;
   original = game = Game.first();
+  if (game.player0)
+    game.player0.online = false;
+  if (game.player1)
+    game.player1.online = false;
+
   collabrators = doc.getCollaborators();
   for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
     one = collabrators[_i];
     if (game.player0) {
-      if (!game.player0.online && game.player0.userid === one.userId) {
+      if (game.player0.userid === one.userId) {
         game.player0.online = true;
       }
     }
@@ -222,7 +225,7 @@ $(function() {
   $('#restart').click(function() {
     var game;
     game = Game.first();
-    game.restart = 1;
+    game.restart = 3;
     game.resume = 0;
     game.pause = 0;
     game.over = 0;
