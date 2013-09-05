@@ -21,13 +21,14 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   if (!window.controllers) {
     return;
   }
+  boards = controllers.boards;
+  players = Player.all();
+
   online = Player.findAllByAttribute('online', true);
   restart = Player.findAllByAttribute('restart', 1);
   over = Player.findAllByAttribute('over', 1);
-  boards = controllers.boards;
   pause = Player.findAllByAttribute('pause', 1);
   resume = Player.findAllByAttribute('resume', 1);
-  players = Player.all();
   me = Player.findByAttribute('userid', controllers.myPlayerRef.userid);
   for (_i = 0, _len = boards.length; _i < _len; _i++) {
     board = boards[_i];
@@ -38,13 +39,11 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   }
   if (restart.length) {
     controllers.myBoard.clear();
-    if (!isLocal) {
-      one = Player.findByAttribute('restart', 1);
-      one.restart = 0;
-      one.over = 0;
-      one.pause = 0;
-      one.resume = 0;
-      one.save();
+    if(restart[0].userid != me.userid){
+      restart[0].restart =0;
+      restart[0].over =0;
+      restart[0].pause =0;
+      restart[0].save();
     }
     controllers.restartGame();
     return;
