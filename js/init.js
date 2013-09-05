@@ -15,30 +15,40 @@ sync = {
 };
 
 Nimbus.Auth.setup(sync);
-
+window.get_player_piece = function(player){
+  var game = Game.first();
+  if (game.player0 && game.player0.userid==player.userid) {
+    return game.player0.piece;
+  };
+  if (game.player1 && game.player1.userid==player.userid) {
+    return game.player1.piece;
+  };
+  return null;
+}
 window.realtime_update_handler = function(event, obj, isLocal) {
   var avatar, board, boards, canvas, game, join, _i, _len;
-  if (!window.controllers) {
+  if (!window.controllers || event!='UPDATE') {
     return;
   }
-  game = Game.first();
   boards = controllers.boards;
+  game = Game.first();
+
   for (_i = 0, _len = boards.length; _i < _len; _i++) {
     board = boards[_i];
     if (board && board.playerRef) {
-      board.snapshot = board.playerRef;
+      board.snapshot = get_player_piece(board.playerRef);
       board.draw();
     }
   }
   if (game.restart) {
     controllers.myBoard.clear();
-    if (!isLocal) {
       game.restart = 0;
       game.over = 0;
       game.pause = 0;
       game.resume = 0;
       game.save();
-    }
+    
+    $('#pause').text('Pause');
     controllers.restartGame();
     return;
   }
@@ -49,6 +59,7 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   if (game.pause) {
     $('#pause').text('Resume');
     controllers.pause();
+    return;
   }
   if (game.resume) {
     controllers.resume();
@@ -62,21 +73,8 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     }
     return;
   }
-  if (controllers.playercount !== online.length && controllers.playercount < 2) {
-    join = Player.findByAttribute('state', 1);
-    if (join) {
-      canvas = $('#canvas' + controllers.playercount).get(0);
-      boards.push(new Tetris.Board(canvas, join));
-      if (join.avatar.indexOf('http') === -1) {
-        avatar = 'https:' + join.avatar;
-      } else {
-        avatar = join.avatar;
-      }
-      $('#avatar' + controllers.playercount).attr('src', avatar);
-      $('.player_name' + controllers.playercount).text(join.name);
-      return controllers.playercount++;
-    }
-  }
+  // will code join
+
 };
 
 Game = Nimbus.Model.setup('Game', ['player0', 'player1', 'state', 'players', 'restart', 'pause', 'resume', 'over', 'owner']);
@@ -113,7 +111,6 @@ window.sync_players_on_callback = function() {
     $('.mask').hide();
     return Game.sync_all(function() {
       var collabrators, game, me, one, player, _i, _len;
-      check_online();
       me = {};
       collabrators = doc.getCollaborators();
       for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
@@ -136,22 +133,39 @@ window.sync_players_on_callback = function() {
         game = Game.create();
         game.owner = me.userId;
         game.player0 = player;
-        game.state = 2;
-        game.restart = 0;
-        game.over = 0;
-        game.pause = 0;
-        game.resum = 0;
-        game.save();
+        
       } else {
-        if (!game.player0 || !game.player0.online) {
+        check_online();
+        if (!game.player0) {
           game.player0 = player;
-        } else if (!game.player1 || !game.player1.online) {
+        }else if(!game.player1){
           game.player1 = player;
-        } else {
-          console.log('waiting');
-        }
+        }else{
+          if (!game.player0.online) {
+            if ( game.player0.userid != player.userid) {
+              game.player0 = player;
+            }else{
+              game.player0.online = true;
+            };
+          } else if (!game.player1.online) {
+            if (game.player1.userid != player.userid) {
+              game.player1 = player;
+            }else if(game.player1.userid == player.userid){
+              game.player1.online = true;
+            };
+          } else {
+            console.log('waiting');
+          }
+        };
       }
-      return window.controllers = new Tetris.Controller(Game.first());
+
+      game.state = 2;
+      game.restart = 0;
+      game.over = 0;
+      game.pause = 0;
+      game.resum = 0;
+      game.save();
+      return window.controllers = new Tetris.Controller(game);
     });
   }
 };
@@ -195,12 +209,14 @@ $(function() {
     if ($(this).text() === 'Pause') {
       game.pause = 1;
       game.resume = 0;
-      game.save();
+      $(this).text('Resume');
     } else if ($(this).text() === 'Resume') {
       game.pause = 0;
       game.resume = 1;
-      game.save();
+      $(this).text('Pause');
     }
+    game.save();
+
     return false;
   });
   $('#restart').click(function() {
@@ -209,6 +225,7 @@ $(function() {
     game.restart = 1;
     game.resume = 0;
     game.pause = 0;
+    game.over = 0;
     game.save();
     return false;
   });

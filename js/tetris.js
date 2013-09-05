@@ -45,12 +45,12 @@ var Tetris = { };
   /**
    * Stores the state of a tetris board and handles drawing it.
    */
-  Tetris.Board = function (canvas, playerRef) {
+  Tetris.Board = function (canvas, playerRef,index) {
     this.context = canvas.getContext('2d');
     this.playerRef = playerRef;
     this.snapshot = null;
     this.isMyBoard = false;
-
+    this.key = 'player'+index;
   };
 
 
@@ -88,10 +88,12 @@ var Tetris = { };
     
     // If there's a falling piece, draw it.
     if (this.playerRef !== null) {
-      var player = Player.findByAttribute('userid',this.playerRef.userid);
-      if (player.piece) {
-        var piece = Tetris.Piece.fromSnapshot(player.piece);
-        this.drawPiece(piece);
+      var game = Game.first(),piece;
+      piece = game[this.key].piece;
+      if (piece) {
+        var draw = Tetris.Piece.fromSnapshot(piece);
+        this.drawPiece(draw);
+        this.fallingPiece = draw;
       };
       
     }
@@ -247,7 +249,7 @@ var Tetris = { };
 
 
   Tetris.Board.prototype.getRow = function (y) {
-    var row = (y < 10) ? ('0' + y) : ('' + y); // Pad row so they sort nicely in debugger. :-)
+    var row = y; // Pad row so they sort nicely in debugger. :-)
     var rowContents;
     var game =Game.first();
     var playerRef = this.playerRef;
@@ -268,7 +270,7 @@ var Tetris = { };
 
 
   Tetris.Board.prototype.setRow = function (y, rowContents) {
-    var row = (y < 10) ? ('0' + y) : ('' + y); // Pad row so they sort nicely in debugger. :-)
+    var row = y; // Pad row so they sort nicely in debugger. :-)
 
     if (rowContents === Tetris.EMPTY_LINE)
       rowContents = null; // delete empty lines so we get remove / added events in debugger. :-)
@@ -371,10 +373,10 @@ var Tetris = { };
     this.tetrisRef = tetrisRef;
     this.players = [];
     if (tetrisRef.player0) {
-      this.players.push(tetrisRef.player0)
+      this.players.push(tetrisRef.player0);
     };
     if (tetrisRef.player1) {
-      this.players.push(tetrisRef.player1)
+      this.players.push(tetrisRef.player1);
     };
     this.createBoards();
 
@@ -385,16 +387,18 @@ var Tetris = { };
   Tetris.Controller.prototype.createBoards = function () {
     this.boards = [];
     var current = JSON.parse(localStorage['current']);
-    for(var i = 0; i <= this.players.length; i++) {
-      var playerRef = this.players[i],display;
+    var game =Game.first();
+    for(var i = 0; i < 2; i++) {
+      var playerRef = game['player'+i];
       if (playerRef) {
         //set current player
         if (playerRef.userid == current.userId) {
           this.myPlayerRef = playerRef;
+          this.snapshot = playerRef.piece;
         };
 
         var canvas = $('#canvas' + i).get(0);
-        this.boards.push(new Tetris.Board(canvas, playerRef));
+        this.boards.push(new Tetris.Board(canvas, playerRef,i));
         display = playerRef.name;
 
         $('.player_name'+i).text(display);
@@ -469,8 +473,8 @@ var Tetris = { };
     $(document).on('keydown', function (evt) {
       if (self.fallingPiece === null)
         return; // piece isn't initialized yet.
-      var pause = Player.findAllByAttribute('pause', 1);
-      if (pause.length) {
+      var game = Game.first();
+      if (game.pause) {
         return;
       };
       var keyCode = evt.which;
@@ -507,9 +511,13 @@ var Tetris = { };
           if (self.fallingPiece.y != newPiece.y) {
             self.resetGravity();
           }
-          var player = Player.findByAttribute('userid',self.myPlayerRef.userid);
           self.fallingPiece = newPiece;
-          newPiece.saveToPlayer(player);
+          if (game.player0 && game.player0.userid==self.myPlayerRef.userid) {
+           newPiece.saveToPlayer(game.player0);
+          };
+          if (game.player1 && game.player1.userid==self.myPlayerRef.userid) {
+           newPiece.saveToPlayer(game.player1);
+          };
         }
         return false; // handled
       }
