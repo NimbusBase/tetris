@@ -88,14 +88,12 @@ var Tetris = { };
     
     // If there's a falling piece, draw it.
     if (this.playerRef !== null) {
-      var game = Game.first(),piece;
-      piece = game[this.key].piece;
-      if (piece) {
-        var draw = Tetris.Piece.fromSnapshot(piece);
-        this.drawPiece(draw);
-        this.fallingPiece = draw;
+      var game = Game.first();
+      if (game[this.key].piece) {
+        var piece = Tetris.Piece.fromSnapshot(game[this.key].piece);
+        this.drawPiece(piece);
+        this.fallingPiece = piece;
       };
-      
     }
 
     // If this isn't my board, dim it out with a 25% opacity black rectangle.
@@ -253,7 +251,7 @@ var Tetris = { };
     var rowContents;
     var game =Game.first(),player = this.key;
 
-    rowContents = game[player].board[row] ? game.player0.board[row] : null;
+    rowContents = game[player].board[row] ? game[player].board[row] : null;
 
     return rowContents || Tetris.EMPTY_LINE;
   };

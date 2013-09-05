@@ -15,19 +15,10 @@ sync = {
 };
 
 Nimbus.Auth.setup(sync);
-window.get_player_piece = function(player){
-  var game = Game.first();
-  if (game.player0 && game.player0.userid==player.userid) {
-    return game.player0.piece;
-  };
-  if (game.player1 && game.player1.userid==player.userid) {
-    return game.player1.piece;
-  };
-  return null;
-}
+
 window.realtime_update_handler = function(event, obj, isLocal) {
   var avatar, board, boards, canvas, game, join, _i, _len;
-  if (!window.controllers || event!='UPDATE') {
+  if (!window.controllers) {
     return;
   }
   boards = controllers.boards;
@@ -36,43 +27,11 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   for (_i = 0, _len = boards.length; _i < _len; _i++) {
     board = boards[_i];
     if (board && board.playerRef) {
-      board.snapshot = get_player_piece(board.playerRef);
+      board.snapshot = game[board.key].piece;
       board.draw();
     }
   }
-  if (game.restart) {
-    controllers.myBoard.clear();
-      game.restart = 0;
-      game.over = 0;
-      game.pause = 0;
-      game.resume = 0;
-      game.save();
-    
-    $('#pause').text('Pause');
-    controllers.restartGame();
-    return;
-  }
-  if (game.over) {
-    controllers.pause();
-    return;
-  }
-  if (game.pause) {
-    $('#pause').text('Resume');
-    controllers.pause();
-    return;
-  }
-  if (game.resume) {
-    controllers.resume();
-    $('#pause').text('Pause');
-    if (!isLocal) {
-      game.restart = 0;
-      game.over = 0;
-      game.pause = 0;
-      game.resume = 0;
-      game.save();
-    }
-    return;
-  }
+
   // will code join
 
 };
@@ -136,25 +95,25 @@ window.sync_players_on_callback = function() {
         
       } else {
         check_online();
-        if (!game.player0) {
-          game.player0 = player;
-        }else if (!game.player0.online) {
-          if ( game.player0.userid != player.userid) {
-            game.player0 = player;
-          }else{
-            game.player0.online = true;
-          };
-        }else if(!game.player1){
-          game.player1 = player;
-        }else if (!game.player1.online) {
-          if (game.player1.userid != player.userid) {
-            game.player1 = player;
-          }else if(game.player1.userid == player.userid){
-            game.player1.online = true;
-          };
-        } else {
-          console.log('waiting');
+        var joined = false;
+        //find by id first
+        for (var i = 0; i < 2; i++) {
+          var one = game['player'+i];
+          if (one && one.userid == player.userid) {
+            game['player'+i] = player;
+            joined = true;
+            break;
+          }else if(!one){
+            game['player'+i] = player;
+            joined = true;
+            break;
+          }
+        };
+
+        if (!joined) {
+          console.log('waiting...');
         }
+
       }
 
       game.state = 2;
@@ -230,6 +189,8 @@ $(function() {
     game.pause = 0;
     game.over = 0;
     game.save();
+    $('#pause').text('Pause');
+    controllers.restartGame();
     return false;
   });
   $('#invite').click(function() {
