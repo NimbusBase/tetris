@@ -25,7 +25,7 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   boards = controllers.boards;
   current = JSON.parse(localStorage['current']);
   me = Player.findByAttribute('userid', current.userId);
-  online = Player.findAllByAttribut('online', true);
+  online = Player.findAllByAttribute('online', true);
   for (_i = 0, _len = boards.length; _i < _len; _i++) {
     board = boards[_i];
     if (board && board.playerRef) {
