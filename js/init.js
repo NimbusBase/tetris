@@ -39,6 +39,7 @@ window.realtime_update_handler = function(event, obj, isLocal) {
       game['restart' + me.index] = 0;
       game.save();
       controllers.restartGame();
+      check_online(true);
       $('#pause').text('Pause');
     }
   }
@@ -168,7 +169,7 @@ window.sync_players_on_callback = function() {
   }
 };
 
-window.check_online = function() {
+window.check_online = function(clear) {
   var collabrators, game, i, one, online, original, player, players, _i, _j, _len;
   original = game = Game.first();
   if (!game) {
@@ -192,6 +193,10 @@ window.check_online = function() {
         }
       }
     }
+    if (!player.online && clear) {
+      player.board = [];
+      player.piece = undefined;
+    };
     player.save();
   }
   game.players = online;
