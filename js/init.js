@@ -209,6 +209,17 @@ $(function() {
     Nimbus.Auth.authorize('GDrive');
     return false;
   });
+  $('a#new_game').click(function(){
+    if (localStorage['doc_id']) {
+      //stop use sharing file instead use my own
+      delete localStorage['doc_id'];
+      location.reload();
+    }else{
+      //delete file and create new -> @todo
+
+    };
+    return false;
+  });
   $('a#logout').click(function() {
     Nimbus.Auth.logout();
     location.reload();
