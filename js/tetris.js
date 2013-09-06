@@ -602,6 +602,7 @@ var Tetris = { };
     // this.opponentPlayerRef.child('restart').set(1);
     this.resetMyBoardAndPiece();
     this.resetGravity();
+    this.restarted = true;
   };
 
   Tetris.Controller.prototype.resume = function(){

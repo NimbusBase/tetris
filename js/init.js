@@ -17,12 +17,14 @@ sync = {
 Nimbus.Auth.setup(sync);
 
 window.realtime_update_handler = function(event, obj, isLocal) {
-  var board, boards, game, player, _i, _len, _results;
+  var board, boards, game, player, _i, _len, _results,me,current;
   if (!window.controllers) {
     return;
   }
   game = Game.first();
   boards = controllers.boards;
+  current = JSON.parse(localStorage['current']);
+  me = Player.findByAttribute('userid',current.userId);
   _results = [];
   for (_i = 0, _len = boards.length; _i < _len; _i++) {
     board = boards[_i];
@@ -34,10 +36,32 @@ window.realtime_update_handler = function(event, obj, isLocal) {
       _results.push(void 0);
     }
   }
-  return _results;
+  
+  if (game.restart0 || game.restart1) {
+    if(game['restart'+me.index]){
+      game['restart'+me.index] = 0;
+      game.save();
+      controllers.restartGame();
+      $('#pause').text('Pause');
+    }
+  };
+
+  if(game.resume) {
+    if (!isLocal) {
+      game.resume = 0;
+      game.save();
+    };
+    controllers.resume();
+    $('#pause').text('Pause');
+  };
+
+  if (game.pause) {
+    controllers.pause();
+    $('#pause').text('Resume');
+  };
 };
 
-Game = Nimbus.Model.setup('Game', ['player0', 'player1', 'state', 'players', 'restart', 'pause', 'resume', 'over', 'owner']);
+Game = Nimbus.Model.setup('Game', ['player0', 'player1', 'state', 'players', 'restart','restart0','restart1', 'pause', 'resume', 'over', 'owner']);
 
 Player = Nimbus.Model.setup('Player', ['name', 'userid', 'avatar', 'piece', 'index', 'board', 'online']);
 
@@ -102,6 +126,7 @@ window.sync_players_on_callback = function() {
           game.pause = 0;
           game.resum = 0;
           game.players = 1;
+
           one = Player.create();
           one.name = player.name;
           one.userid = player.userid;
@@ -112,7 +137,6 @@ window.sync_players_on_callback = function() {
           one.index = i;
           joined = true;
           one.save();
-          game.save();
         } else {
           check_online();
           joined = false;
@@ -138,6 +162,10 @@ window.sync_players_on_callback = function() {
             one.save();
           }
         }
+        game.restart0 = 0;
+        game.restart1 = 0;
+        game.save();
+
         if (!joined) {
           console.log('waiting...');
         }
@@ -207,7 +235,8 @@ $(function() {
   $('#restart').click(function() {
     var game;
     game = Game.first();
-    game.restart = 1;
+    game.restart0 = 1;
+    game.restart1 = 1;
     game.resume = 0;
     game.pause = 0;
     game.save();
