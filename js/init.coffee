@@ -13,93 +13,41 @@ window.realtime_update_handler = (event,obj,isLocal)->
 	if !window.controllers
 		return
 	# stats
-	online = Player.findAllByAttribute('online',true)
-	restart = Player.findAllByAttribute('restart',1)
-	over = Player.findAllByAttribute('over',1)
+	game = Game.first()
 	boards = controllers.boards
-	pause = Player.findAllByAttribute('pause',1)
-	resume = Player.findAllByAttribute('resume',1)
-	players = Player.all()
-	me = Player.findByAttribute('userid',controllers.myPlayerRef.userid)
+	current = JSON.parse(localStorage['current'])
+	me = Player.findByAttribute('userid',current.userId)
+	online = Player.findAllByAttribut('online',true)
 	# do the drawing
 	for board in boards
 		if board and board.playerRef
-			board.snapshot = board.playerRef
+			player = Player.findByAttribute('userid',board.playerRef.userid)
+			board.snapshot = player.piece
 			board.draw()
-	# restart the game
-	if restart.length
-		controllers.myBoard.clear()
-		if !isLocal
-			one = Player.findByAttribute('restart',1)
-			one.restart = 0
-			one.over = 0
-			one.pause = 0
-			one.resume = 0
-			one.save()
-		
-		controllers.restartGame()
-		return
-	# game over
-	if over.length
-		controllers.pause()
-		if controllers.playercount is 2 and over.length is 2
-			console.log 'even..'
-		else if controllers.playercount is 2
-			for player in players
-				if !player.over
-					log 'player '+player.name+' win'
-					break;			
-		else
-			console.log 'game over'
-		for one in over
-			if one.over and !isLocal
-				one.over = 0
-				one.save()
-		return
 
-	# watch for pause
-	if pause.length
-		if !isLocal
-			$('#pause').text('Resume')
-			controllers.pause()
+	if game.restart0 or game.restart1
+		if game['restart'+me.index]
+			game['restart'+me.index] =0
+			game.save()
+			controllers.restartGame()
+			$('#pause').text('Pause')
 	
-	# watch for resume
-	if resume.length
-		controllers.resume()
-		$('#pause').text('Pause')
+	if game.resume
 		if !isLocal
-			for one in resume
-				one.resume = 0
-				one.pause = 0
-				one.save()
-		return
+			game.resume = 0
+			game.save()
+		controllers.resume()
+		$("#pause").text('Pause')
+	if game.pause
+		controller.pause()
+		$('#pause').text('Resume')
 
-	# watch for join
-	if controllers.playercount!=online.length and controllers.playercount<2
-		join = Player.findByAttribute('state',1)
-		if join
-			canvas = $('#canvas'+controllers.playercount).get(0)
-			boards.push(new Tetris.Board(canvas,join))
+	# if controllers.boards.length isnt online.length
+		#login new user
 
-			if join.avatar.indexOf('http') is -1 
-				avatar = 'https:'+join.avatar 
-			else
-				avatar = join.avatar
-			$('#avatar'+controllers.playercount).attr('src',avatar)
-			$('.player_name'+controllers.playercount).text(join.name)
-			controllers.playercount++
+Game = Nimbus.Model.setup('Game',['player0','player1','state','players','restart','restart0','restart1','pause','resume','over','owner'])
+Player = Nimbus.Model.setup('Player',['name','userid','avatar','piece','index','board','online'])
 
-		
-Player = Nimbus.Model.setup('Player', ['userid', 'name', 'online', 'board', 'piece', 'avatar','restart','pause','resume','state','over'])
-Player.prototype.child = (key)->
-	key = key.toString()
-	result = this
-	keys = key.split('/')
-	i=0
-	while i<keys.length
-		result = result[keys[i]]
-		i++
-	result
 Nimbus.Auth.set_app_ready(()->
 	search = localStorage['doc_id']
 	if search and search isnt c_file.id
@@ -129,75 +77,99 @@ Nimbus.Auth.set_app_ready(()->
 window.sync_players_on_callback = ()->
 	# check auth
 	if Nimbus.Auth.authorized()
-		Player.sync_all(()->
-			$('#login').text('Logout')
-			$('.mask').hide()
-			# sync player,board
-			collabrators = doc.getCollaborators()
-			for one in collabrators
-				if one.isMe
-					localStorage['current'] = JSON.stringify(one);
-					fill_player(one)
-					me = one
+		$('#login').text('Logout')
+		$('.mask').hide()
 
-			data = Player.findByAttribute('userid',me.userId)
-
-			for player in Player.all()
-				player.online = false
-				player.state = 0;
-				player.over = 0
-				player.restart = 0
-				player.pause = 0
-				player.resume = 0
+		Game.sync_all(()->
+			Player.sync_all(()->
+				me = {}
+				collabrators = doc.getCollaborators()
 				for one in collabrators
-					if one.userId is player.userid
-						console.log('player '+player.name+' online')
-						player.online=true 
+					if one.isMe
+						localStorage['current'] = JSON.stringify(one);
+						me = one
+				game = Game.first()
+				players = Player.all()
 
-				player.save()
-			window.controllers = new Tetris.Controller(Player.all())
+				player = 
+					'name' : me.displayName
+					'userid':me.userId
+					'avatar':me.photoUrl
+					'board' : []
+					'piece' : null
+					'online': true
+				if !game
+					game = Game.create()
+					game.owner = me.userId
+					game.state = 2
+					game.restart = 0
+					game.over = 0
+					game.pause = 0
+					game.resum = 0
+					game.players = 1
+
+					# add user 
+					one  = Player.create()
+					one.name = player.name
+					one.userid = player.userid
+					one.avatar = player.avatar
+					one.piece = player.piece
+					one.board = player.board
+					one.online = true
+					one.index = i
+					joined = true
+					one.save()
+				else
+					check_online()
+					joined = false
+					for i in [0...2]
+						continue if !joined
+						one = players[i]
+						if one and one.userid is player.userid
+							one.online = true
+							joined = true
+						else if !one
+							one  = Player.create()
+							one.name = player.name
+							one.userid = player.userid
+							one.avatar = player.avatar
+							one.piece = player.piece
+							one.board = player.board
+							one.online = true
+							one.index = i
+							joined = true
+						one.save()
+				if !joined
+					console.log 'waiting...'
+				game.restart0 = 0		
+				game.restart1 = 0		
+				game.save()
+				
+				window.controllers = new Tetris.Controller(game)
+			)
+			
 		)
 		
-
-
-window.set_player = (data,target)->
-	player = Player.findByAttribute('userid',data.userId)
-	if !player
-		player = Player.create()
-		player.userid = data.userId
-		player.name = data.displayName
-		player.avatar = data.photoUrl
-	player.online = true
-	player.state = 1
-	player.restart = 0
-	player.over = 0
-	player.avatar = data.photoUrl
-	player.save()
-
-window.fill_player = (user)->
+window.check_online = ()->
+	original = game = Game.first()
+	return if !game
 	players = Player.all()
-	if players.length<2
-		set_player(user)
-		return
-	else if players.length is 2
-		player = Player.findByAttribute('userid',user.userId)
-		if player
-			player.online = true
-			player.avatar = user.photoUrl
-			player.state = 1
-			player.restart = 0
-			player.over = 0
-			player.save()
-			return
-		else
-			offline = Player.findByAttribute('offline',false)
-			if offline
-				offline.destroy()
-				set_player(user)
-				return
+	collabrators = doc.getCollaborators()
+	online = 0
+	for i in [0...2]
+		player = players[i]
+		continue if !player
+		player.online = false
+		for one in collabrators
+			if player
+				if player.userid is one.userId
+					player.online = true
+					online++
+		player.save()
 
-	console.log 'waiting...'
-		
+	game.players = online
+	game.save()
+	
 $ ()->
 
 	$('a#login').click(()->
@@ -213,36 +185,34 @@ $ ()->
 	)
 
 	$('#pause').click(()->
-		me = Player.findByAttribute('userid',controllers.myPlayerRef.userid)
-
+		game = Game.first()
 		if $(this).text() is 'Pause'
-			me.pause = 1
-			me.resume = 0
-			me.save()
-			controllers.pause()
+			game.pause = 1
+			game.resume = 0
+			game.save()
 			$(this).text('Resume')
-		else
-			me.resume = 1
-			me.pause = 0
-			me.save()
-			controllers.resume()
+		else if $(this).text() is 'Resume'
+			# ...game = Game.first()
+			game.pause = 0
+			game.resume = 1
+			game.save()
 			$(this).text('Pause')
+		false
 	)
 
 	$('#restart').click(()->
-		me = Player.findByAttribute('userid',controllers.myPlayerRef.userid)
-		me.restart =1
-		me.over = 0
-		me.pause = 0 
-		me.resume = 0
-		me.piece = null
-		me.save()
+		game = Game.first()
+		game.restart0 = 1
+		game.restart1 = 1
+		game.resume = 0
+		game.pause = 0
+		game.save()
+		$('#pause').text('Pause')
 		false
 	)
 
 	$('#invite').click(()->
 		email = $('#invite_email').val()
-
 		# check email
 		Nimbus.Share.add_share_user_real(email,(user)->
 			console.log('file shared')
