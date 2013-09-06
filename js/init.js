@@ -136,7 +136,7 @@ window.sync_players_on_callback = function() {
           check_online();
           joined = false;
           for (i = _j = 0; _j < 2; i = ++_j) {
-            if (!joined) {
+            if (joined) {
               continue;
             }
             one = players[i];
