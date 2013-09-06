@@ -17,7 +17,7 @@ sync = {
 Nimbus.Auth.setup(sync);
 
 window.realtime_update_handler = function(event, obj, isLocal) {
-  var board, boards, game, _i, _len, _results;
+  var board, boards, game, player, _i, _len, _results;
   if (!window.controllers) {
     return;
   }
@@ -27,7 +27,8 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   for (_i = 0, _len = boards.length; _i < _len; _i++) {
     board = boards[_i];
     if (board && board.playerRef) {
-      board.snapshot = game[board.key].piece;
+      player = Player.findByAttribute('userid', board.playerRef.userid);
+      board.snapshot = player.piece;
       _results.push(board.draw());
     } else {
       _results.push(void 0);
@@ -38,7 +39,7 @@ window.realtime_update_handler = function(event, obj, isLocal) {
 
 Game = Nimbus.Model.setup('Game', ['player0', 'player1', 'state', 'players', 'restart', 'pause', 'resume', 'over', 'owner']);
 
-Player = Nimbus.Model.setup('Player', ['name', 'useid', 'avatar', 'piece', 'board', 'online']);
+Player = Nimbus.Model.setup('Player', ['name', 'userid', 'avatar', 'piece', 'index', 'board', 'online']);
 
 Nimbus.Auth.set_app_ready(function() {
   var search;
@@ -71,63 +72,77 @@ window.sync_players_on_callback = function() {
     $('#login').text('Logout');
     $('.mask').hide();
     return Game.sync_all(function() {
-      var collabrators, game, i, joined, me, one, player, players, _i, _j, _len;
-      check_online();
-      me = {};
-      collabrators = doc.getCollaborators();
-      for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
-        one = collabrators[_i];
-        if (one.isMe) {
-          localStorage['current'] = JSON.stringify(one);
-          me = one;
-        }
-      }
-      game = Game.first();
-      players = Player.all();
-      player = {
-        'name': me.displayName,
-        'userid': me.userId,
-        'avatar': me.photoUrl,
-        'board': [],
-        'piece': null,
-        'online': true
-      };
-      if (!game) {
-        game = Game.create();
-        game.owner = me.userId;
-        game.state = 2;
-        game.restart = 0;
-        game.over = 0;
-        game.pause = 0;
-        game.resum = 0;
-        game.save();
-      } else {
-        check_online();
-        joined = false;
-        for (i = _j = 0; _j < 2; i = ++_j) {
-          one = players[i];
-          if (one && one.userid === player.userid) {
-            one.online = true;
-            joined = true;
-            break;
-          } else if (!one) {
-            one = Player.create();
-            one.name = player.name;
-            one.userid = player.userid;
-            one.avatar = player.avatar;
-            one.piece = player.piece;
-            one.board = player.board;
-            one.online = true;
-            one.index = i;
-            joined = true;
-            break;
+      return Player.sync_all(function() {
+        var collabrators, game, i, joined, me, one, player, players, _i, _j, _len;
+        me = {};
+        collabrators = doc.getCollaborators();
+        for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
+          one = collabrators[_i];
+          if (one.isMe) {
+            localStorage['current'] = JSON.stringify(one);
+            me = one;
           }
         }
-      }
-      if (!joined) {
-        console.log('waiting...');
-      }
-      return window.controllers = new Tetris.Controller(game);
+        game = Game.first();
+        players = Player.all();
+        player = {
+          'name': me.displayName,
+          'userid': me.userId,
+          'avatar': me.photoUrl,
+          'board': [],
+          'piece': null,
+          'online': true
+        };
+        if (!game) {
+          game = Game.create();
+          game.owner = me.userId;
+          game.state = 2;
+          game.restart = 0;
+          game.over = 0;
+          game.pause = 0;
+          game.resum = 0;
+          game.players = 1;
+          one = Player.create();
+          one.name = player.name;
+          one.userid = player.userid;
+          one.avatar = player.avatar;
+          one.piece = player.piece;
+          one.board = player.board;
+          one.online = true;
+          one.index = i;
+          joined = true;
+          one.save();
+          game.save();
+        } else {
+          check_online();
+          joined = false;
+          for (i = _j = 0; _j < 2; i = ++_j) {
+            if (!joined) {
+              continue;
+            }
+            one = players[i];
+            if (one && one.userid === player.userid) {
+              one.online = true;
+              joined = true;
+            } else if (!one) {
+              one = Player.create();
+              one.name = player.name;
+              one.userid = player.userid;
+              one.avatar = player.avatar;
+              one.piece = player.piece;
+              one.board = player.board;
+              one.online = true;
+              one.index = i;
+              joined = true;
+            }
+            one.save();
+          }
+        }
+        if (!joined) {
+          console.log('waiting...');
+        }
+        return window.controllers = new Tetris.Controller(game);
+      });
     });
   }
 };
@@ -135,16 +150,22 @@ window.sync_players_on_callback = function() {
 window.check_online = function() {
   var collabrators, game, i, one, online, original, player, players, _i, _j, _len;
   original = game = Game.first();
+  if (!game) {
+    return;
+  }
   players = Player.all();
   collabrators = doc.getCollaborators();
   online = 0;
   for (i = _i = 0; _i < 2; i = ++_i) {
     player = players[i];
+    if (!player) {
+      continue;
+    }
     player.online = false;
     for (_j = 0, _len = collabrators.length; _j < _len; _j++) {
       one = collabrators[_j];
       if (player) {
-        if (player.userid === one.userid) {
+        if (player.userid === one.userId) {
           player.online = true;
           online++;
         }

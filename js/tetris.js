@@ -249,7 +249,7 @@ var Tetris = { };
   Tetris.Board.prototype.getRow = function (y) {
     var row = y; // Pad row so they sort nicely in debugger. :-)
     var rowContents;
-    var game player = Player.findByAttribute('userid',this.playerRef.userid);
+    var player = Player.findByAttribute('userid',this.playerRef.userid);
 
     rowContents = player.board[row] ? player.board[row] : null;
 
@@ -320,7 +320,7 @@ var Tetris = { };
       x: this.x,
       y: this.y
     }
-    var player = Player.findByAttribute('userid',board.myPlayerRef.userid);
+    var player = Player.findByAttribute('userid',board.playerRef.userid);
 
     player.piece = data;
     player.save();

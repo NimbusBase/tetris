@@ -18,11 +18,12 @@ window.realtime_update_handler = (event,obj,isLocal)->
 	# do the drawing
 	for board in boards
 		if board and board.playerRef
-			board.snapshot = game[board.key].piece
+			player = Player.findByAttribute('userid',board.playerRef.userid)
+			board.snapshot = player.piece
 			board.draw()
 
 Game = Nimbus.Model.setup('Game',['player0','player1','state','players','restart','pause','resume','over','owner'])
-Player = Nimbus.Model.setup('Player',['name','useid','avatar','piece','board','online'])
+Player = Nimbus.Model.setup('Player',['name','userid','avatar','piece','index','board','online'])
 
 Nimbus.Auth.set_app_ready(()->
 	search = localStorage['doc_id']
@@ -57,73 +58,87 @@ window.sync_players_on_callback = ()->
 		$('.mask').hide()
 
 		Game.sync_all(()->
-			check_online()
-			me = {}
-			collabrators = doc.getCollaborators()
-			for one in collabrators
-				if one.isMe
-					localStorage['current'] = JSON.stringify(one);
-					me = one
-			game = Game.first()
-			players = Player.all()
+			Player.sync_all(()->
+				me = {}
+				collabrators = doc.getCollaborators()
+				for one in collabrators
+					if one.isMe
+						localStorage['current'] = JSON.stringify(one);
+						me = one
+				game = Game.first()
+				players = Player.all()
 
-			player = 
-				'name' : me.displayName
-				'userid':me.userId
-				'avatar':me.photoUrl
-				'board' : []
-				'piece' : null
-				'online': true
-			if !game
-				game = Game.create()
-				game.owner = me.userId
-				game.state = 2
-				game.restart = 0
-				game.over = 0
-				game.pause = 0
-				game.resum = 0
-				game.save()
+				player = 
+					'name' : me.displayName
+					'userid':me.userId
+					'avatar':me.photoUrl
+					'board' : []
+					'piece' : null
+					'online': true
+				if !game
+					game = Game.create()
+					game.owner = me.userId
+					game.state = 2
+					game.restart = 0
+					game.over = 0
+					game.pause = 0
+					game.resum = 0
+					game.players = 1
 
-				# add user 
-
-			else
-				check_online()
-				joined = false
-				for i in [0...2]
-					one = players[i]
-					if one and one.userid is player.userid
-						one.online = true
-						joined = true
-						break
-					else if !one
-						one  = Player.create()
-						one.name = player.name
-						one.userid = player.userid
-						one.avatar = player.avatar
-						one.piece = player.piece
-						one.board = player.board
-						one.online = true
-						one.index = i
-						joined = true
-						break
-			if !joined
-				console.log 'waiting...'
-						
+					# add user 
+					one  = Player.create()
+					one.name = player.name
+					one.userid = player.userid
+					one.avatar = player.avatar
+					one.piece = player.piece
+					one.board = player.board
+					one.online = true
+					one.index = i
+					joined = true
+					one.save()
+					game.save()
+				else
+					check_online()
+					joined = false
+					for i in [0...2]
+						continue if !joined
+						one = players[i]
+						if one and one.userid is player.userid
+							one.online = true
+							joined = true
+						else if !one
+							one  = Player.create()
+							one.name = player.name
+							one.userid = player.userid
+							one.avatar = player.avatar
+							one.piece = player.piece
+							one.board = player.board
+							one.online = true
+							one.index = i
+							joined = true
+						one.save()
+				if !joined
+					console.log 'waiting...'
+							
+				
+				window.controllers = new Tetris.Controller(game)
+			)
 			
-			window.controllers = new Tetris.Controller(game)
 		)
 		
 window.check_online = ()->
 	original = game = Game.first()
+	return if !game
 	players = Player.all()
 	collabrators = doc.getCollaborators()
 	online = 0
 	for i in [0...2]
 		player = players[i]
+		continue if !player
 		player.online = false
 		for one in collabrators
 			if player
-				if player.userid is one.userid
+				if player.userid is one.userId
 					player.online = true
 					online++
 		player.save()
