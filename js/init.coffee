@@ -18,58 +18,11 @@ window.realtime_update_handler = (event,obj,isLocal)->
 	# do the drawing
 	for board in boards
 		if board and board.playerRef
-			board.snapshot = board.playerRef
+			board.snapshot = game[board.key].piece
 			board.draw()
-	# restart the game
-	if game.restart
-		controllers.myBoard.clear()
-		if !isLocal
-			game.restart = 0
-			game.over = 0
-			game.pause = 0
-			game.resume = 0
-			game.save()
-		
-		controllers.restartGame()
-		return
-	# game over
-	if game.over
-		controllers.pause()
-		return
-
-	# watch for pause
-	if game.pause
-		$('#pause').text('Resume')
-		controllers.pause()
-	
-	# watch for resume
-	if game.resume
-		controllers.resume()
-		$('#pause').text('Pause')
-		if !isLocal
-			game.restart = 0
-			game.over = 0
-			game.pause = 0
-			game.resume = 0
-			game.save()
-		return
-
-	# watch for join
-	if controllers.playercount!=online.length and controllers.playercount<2
-		join = Player.findByAttribute('state',1)
-		if join
-			canvas = $('#canvas'+controllers.playercount).get(0)
-			boards.push(new Tetris.Board(canvas,join))
-
-			if join.avatar.indexOf('http') is -1 
-				avatar = 'https:'+join.avatar 
-			else
-				avatar = join.avatar
-			$('#avatar'+controllers.playercount).attr('src',avatar)
-			$('.player_name'+controllers.playercount).text(join.name)
-			controllers.playercount++
 
 Game = Nimbus.Model.setup('Game',['player0','player1','state','players','restart','pause','resume','over','owner'])
+Player = Nimbus.Model.setup('Player',['name','useid','avatar','piece','board','online'])
 
 Nimbus.Auth.set_app_ready(()->
 	search = localStorage['doc_id']
@@ -112,6 +65,8 @@ window.sync_players_on_callback = ()->
 					localStorage['current'] = JSON.stringify(one);
 					me = one
 			game = Game.first()
+			players = Player.all()
+
 			player = 
 				'name' : me.displayName
 				'userid':me.userId
@@ -122,40 +77,59 @@ window.sync_players_on_callback = ()->
 			if !game
 				game = Game.create()
 				game.owner = me.userId
-				game.player0 = player
 				game.state = 2
 				game.restart = 0
 				game.over = 0
 				game.pause = 0
 				game.resum = 0
 				game.save()
-			else
-				if !game.player0 or !game.player0.online
-					# join as player0
-					game.player0 = player
-				else if !game.player1 or !game.player1.online
-					# join as player1
-					game.player1 = player
-				else
-					console.log 'waiting'
 
-			window.controllers = new Tetris.Controller(Game.first())
+				# add user 
+
+			else
+				check_online()
+				joined = false
+				for i in [0...2]
+					one = players[i]
+					if one and one.userid is player.userid
+						one.online = true
+						joined = true
+						break
+					else if !one
+						one  = Player.create()
+						one.name = player.name
+						one.userid = player.userid
+						one.avatar = player.avatar
+						one.piece = player.piece
+						one.board = player.board
+						one.online = true
+						one.index = i
+						joined = true
+						break
+			if !joined
+				console.log 'waiting...'
+						
+			
+			window.controllers = new Tetris.Controller(game)
 		)
 		
 window.check_online = ()->
 	original = game = Game.first()
+	players = Player.all()
 	collabrators = doc.getCollaborators()
-	for one in collabrators
-		if game.player0
-			if !game.player0.online and game.player0.userid is one.userId
-				game.player0.online = true
-		if game.player1
-			if !game.player1.online and game.player1.userid is one.userId
-				game.player1.online = true
-		
-	if original isnt game
-		game.save()
-	
+	online = 0
+	for i in [0...2]
+		player = players[i]
+		player.online = false
+		for one in collabrators
+			if player
+				if player.userid is one.userid
+					player.online = true
+					online++
+		player.save()
+
+	game.players = online
+	game.save()
 	
 $ ()->
 
@@ -177,11 +151,13 @@ $ ()->
 			game.pause = 1
 			game.resume = 0
 			game.save()
+			$(this).text('Resume')
 		else if $(this).text() is 'Resume'
 			# ...game = Game.first()
 			game.pause = 0
 			game.resume = 1
 			game.save()
+			$(this).text('Pause')
 		false
 	)
 
@@ -191,6 +167,8 @@ $ ()->
 		game.resume = 0
 		game.pause = 0
 		game.save()
+		$('#pause').text('Pause')
+		controllers.restartGame()
 		false
 	)
 
