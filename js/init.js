@@ -52,7 +52,7 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     $("#pause").text('Pause');
   }
   if (game.pause) {
-    controller.pause();
+    controllers.pause();
     return $('#pause').text('Resume');
   }
 };
