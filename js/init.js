@@ -216,7 +216,9 @@ $(function() {
       location.reload();
     }else{
       //delete file and create new -> @todo
-
+      Player.destroyAll();
+      Game.destroyAll();
+      location.reload();
     };
     return false;
   });
