@@ -17,7 +17,7 @@ window.realtime_update_handler = (event,obj,isLocal)->
 	boards = controllers.boards
 	current = JSON.parse(localStorage['current'])
 	me = Player.findByAttribute('userid',current.userId)
-	online = Player.findAllByAttribut('online',true)
+	online = Player.findAllByAttribute('online',true)
 	# do the drawing
 	for board in boards
 		if board and board.playerRef
@@ -30,6 +30,7 @@ window.realtime_update_handler = (event,obj,isLocal)->
 			game['restart'+me.index] =0
 			game.save()
 			controllers.restartGame()
+			check_online(true)
 			$('#pause').text('Pause')
 	
 	if game.resume
@@ -39,11 +40,28 @@ window.realtime_update_handler = (event,obj,isLocal)->
 		controllers.resume()
 		$("#pause").text('Pause')
 	if game.pause
-		controller.pause()
+		controllers.pause()
 		$('#pause').text('Resume')
 
 	# if controllers.boards.length isnt online.length
 		#login new user
+window.collaborator_left_callback = (evt)->
+	# process user left event 
+	user = evt.collaborator
+	players = Player.all()
+	for player in players
+		if player.userid is user.userId
+			player.online = false
+			player.save()
+
+			# stop the board
+			if controllers.boards
+				for board in controllers.boards
+					if board.playerRef.userid is player.userid
+						index = controllers.boards.indexOf(board)
+						controllers.boards.splice(index,1)
+
+			break
 
 Game = Nimbus.Model.setup('Game',['player0','player1','state','players','restart','restart0','restart1','pause','resume','over','owner'])
 Player = Nimbus.Model.setup('Player',['name','userid','avatar','piece','index','board','online'])
@@ -123,7 +141,7 @@ window.sync_players_on_callback = ()->
 					check_online()
 					joined = false
 					for i in [0...2]
-						continue if !joined
+						continue if joined
 						one = players[i]
 						if one and one.userid is player.userid
 							one.online = true
@@ -150,7 +168,7 @@ window.sync_players_on_callback = ()->
 			
 		)
 		
-window.check_online = ()->
+window.check_online = (clear)->
 	original = game = Game.first()
 	return if !game
 	players = Player.all()
@@ -165,19 +183,26 @@ window.check_online = ()->
 				if player.userid is one.userId
 					player.online = true
 					online++
+		if !player.online and clear
+			player.board = []
+			player.piece = null
 		player.save()
-
+				
 	game.players = online
 	game.save()
 	
 $ ()->
-
+	# login user
 	$('a#login').click(()->
 		console.log 'auth start...'
 		Nimbus.Auth.authorize('GDrive')
 		false
 	)
-
+	# start a new game
+	$('a#new_game').click(()->
+		
+	)
+	# logout user
 	$('a#logout').click(()->
 		Nimbus.Auth.logout()
 		location.reload()
@@ -216,7 +241,8 @@ $ ()->
 		# check email
 		Nimbus.Share.add_share_user_real(email,(user)->
 			console.log('file shared')
-			link = location.origin + location.pathname + '?'+ window.c_file.id
+			id = if !localStorage['doc_id'] then  window.c_file.id else localStorage['doc_id']
+			link = location.origin + location.pathname + '?'+ id
 			$.prompt('Copy and send this link to your friend: ' + link)
 		)
 		false

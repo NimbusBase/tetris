@@ -57,6 +57,34 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   }
 };
 
+window.collaborator_left_callback = function(evt) {
+  var board, index, player, players, user, _i, _j, _len, _len1, _ref, _results;
+  user = evt.collaborator;
+  players = Player.all();
+  _results = [];
+  for (_i = 0, _len = players.length; _i < _len; _i++) {
+    player = players[_i];
+    if (player.userid === user.userId) {
+      player.online = false;
+      player.save();
+      if (controllers.boards) {
+        _ref = controllers.boards;
+        for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+          board = _ref[_j];
+          if (board.playerRef.userid === player.userid) {
+            index = controllers.boards.indexOf(board);
+            controllers.boards.splice(index, 1);
+          }
+        }
+      }
+      break;
+    } else {
+      _results.push(void 0);
+    }
+  }
+  return _results;
+};
+
 Game = Nimbus.Model.setup('Game', ['player0', 'player1', 'state', 'players', 'restart', 'restart0', 'restart1', 'pause', 'resume', 'over', 'owner']);
 
 Player = Nimbus.Model.setup('Player', ['name', 'userid', 'avatar', 'piece', 'index', 'board', 'online']);
@@ -195,8 +223,8 @@ window.check_online = function(clear) {
     }
     if (!player.online && clear) {
       player.board = [];
-      player.piece = undefined;
-    };
+      player.piece = null;
+    }
     player.save();
   }
   game.players = online;
@@ -209,19 +237,7 @@ $(function() {
     Nimbus.Auth.authorize('GDrive');
     return false;
   });
-  $('a#new_game').click(function(){
-    if (localStorage['doc_id']) {
-      //stop use sharing file instead use my own
-      delete localStorage['doc_id'];
-      location.reload();
-    }else{
-      //delete file and create new -> @todo
-      Player.destroyAll();
-      Game.destroyAll();
-      location.reload();
-    };
-    return false;
-  });
+  $('a#new_game').click(function() {});
   $('a#logout').click(function() {
     Nimbus.Auth.logout();
     location.reload();
@@ -258,9 +274,10 @@ $(function() {
     var email;
     email = $('#invite_email').val();
     Nimbus.Share.add_share_user_real(email, function(user) {
-      var link;
+      var id, link;
       console.log('file shared');
-      link = location.origin + location.pathname + '?' + window.c_file.id;
+      id = !localStorage['doc_id'] ? window.c_file.id : localStorage['doc_id'];
+      link = location.origin + location.pathname + '?' + id;
       return $.prompt('Copy and send this link to your friend: ' + link);
     });
     return false;
