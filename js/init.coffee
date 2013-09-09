@@ -1,8 +1,3 @@
-if location.search and location.search.substr(1)
-	localStorage['doc_id'] = location.search.substr(1)
-	Game.destroyAll()
-	Player.destroyAll()
-	location.href = location.origin+location.pathname
 
 sync = 
 	'GDrive':
@@ -11,6 +6,15 @@ sync =
 		"app_name": "tetris"
 
 Nimbus.Auth.setup(sync)
+Game = Nimbus.Model.setup('Game',['player0','player1','state','players','restart','restart0','restart1','pause','resume','over','owner'])
+Player = Nimbus.Model.setup('Player',['name','userid','avatar','piece','index','board','online'])
+
+if location.search and location.search.substr(1)
+	localStorage['doc_id'] = location.search.substr(1)
+	Game.destroyAll()
+	Player.destroyAll()
+	location.href = location.origin+location.pathname
+
 window.realtime_update_handler = (event,obj,isLocal)->
 	if !window.controllers
 		return
@@ -72,8 +76,6 @@ window.collaborator_left_callback = (evt)->
 
 			break
 
-Game = Nimbus.Model.setup('Game',['player0','player1','state','players','restart','restart0','restart1','pause','resume','over','owner'])
-Player = Nimbus.Model.setup('Player',['name','userid','avatar','piece','index','board','online'])
 
 Nimbus.Auth.set_app_ready(()->
 	search = localStorage['doc_id']
