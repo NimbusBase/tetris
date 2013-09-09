@@ -43,8 +43,9 @@ window.realtime_update_handler = (event,obj,isLocal)->
 		controllers.pause()
 		$('#pause').text('Resume')
 
-	# if controllers.boards.length isnt online.length
+	if controllers.boards.length isnt online.length
 		#login new user
+		console.log 'will add the other user to boards'
 window.collaborator_left_callback = (evt)->
 	# process user left event 
 	user = evt.collaborator
@@ -100,35 +101,77 @@ window.sync_players_on_callback = ()->
 
 		Game.sync_all(()->
 			Player.sync_all(()->
-				me = {}
-				collabrators = doc.getCollaborators()
-				for one in collabrators
-					if one.isMe
-						localStorage['current'] = JSON.stringify(one);
-						me = one
-				game = Game.first()
-				players = Player.all()
+				# check all player status
+				check_online()
+				# join current user
+				join_me()
+			)
+			
+		)
+window.join_me = ()->
+	me = {}
+	collabrators = doc.getCollaborators()
+	for one in collabrators
+		if one.isMe
+			localStorage['current'] = JSON.stringify(one);
+			me = one
+	game = Game.first()
+	players = Player.all()
 
-				player = 
-					'name' : me.displayName
-					'userid':me.userId
-					'avatar':me.photoUrl
-					'board' : []
-					'piece' : null
-					'online': true
-				if !game
-					game = Game.create()
-					game.owner = me.userId
-					game.state = 2
-					game.restart = 0
-					game.over = 0
-					game.pause = 0
-					game.resum = 0
-					game.players = 1
+	player = 
+		'name' : me.displayName
+		'userid':me.userId
+		'avatar':me.photoUrl
+		'board' : []
+		'piece' : null
+		'online': true
+	if !game
+		game = Game.create()
+		game.owner = me.userId
+		game.state = 2
+		game.restart0 = 0
+		game.restart1 = 0
+		game.over = 0
+		game.pause = 0
+		game.resume = 0
+		game.players = 1
 
-					# add user 
-					one  = Player.create()
-					one.name = player.name
+		# add user 
+		one  = Player.create()
+		one.name = player.name
+		one.userid = player.userid
+		one.avatar = player.avatar
+		one.piece = player.piece
+		one.board = player.board
+		one.online = true
+		one.index = 0
+		joined = true
+		one.save()
+	else
+		joined = false
+		for i in [0...2]
+			continue if joined
+			one = players[i]
+			if one and one.userid is player.userid
+				one.online = true
+				joined = true
+			else if !one
+				one  = Player.create()
+				one.name = player.name
+				one.userid = player.userid
+				one.avatar = player.avatar
+				one.piece = player.piece
+				one.board = player.board
+				one.online = true
+				one.index = i
+				joined = true
+			one.save()
+		# still not joined ,check offline user
+		if !joined
+			for i in [0...2]
+				one = players[i]
+				if !one.online
+					one.name = Player.name
 					one.userid = player.userid
 					one.avatar = player.avatar
 					one.piece = player.piece
@@ -136,44 +179,20 @@ window.sync_players_on_callback = ()->
 					one.online = true
 					one.index = i
 					joined = true
-					one.save()
-				else
-					check_online()
-					joined = false
-					for i in [0...2]
-						continue if joined
-						one = players[i]
-						if one and one.userid is player.userid
-							one.online = true
-							joined = true
-						else if !one
-							one  = Player.create()
-							one.name = player.name
-							one.userid = player.userid
-							one.avatar = player.avatar
-							one.piece = player.piece
-							one.board = player.board
-							one.online = true
-							one.index = i
-							joined = true
-						one.save()
-				if !joined
-					console.log 'waiting...'
-				game.restart0 = 0		
-				game.restart1 = 0		
-				game.save()
-				
-				window.controllers = new Tetris.Controller(game)
-			)
-			
-		)
-		
+					break
+	# not available ,set waiting 
+	if !joined
+		console.log 'waiting...'
+	game.restart0 = 0		
+	game.restart1 = 0		
+	game.save()
+	
+	window.controllers = new Tetris.Controller(game)		
 window.check_online = (clear)->
 	original = game = Game.first()
 	return if !game
 	players = Player.all()
 	collabrators = doc.getCollaborators()
-	online = 0
 	for i in [0...2]
 		player = players[i]
 		continue if !player
@@ -182,13 +201,11 @@ window.check_online = (clear)->
 			if player
 				if player.userid is one.userId
 					player.online = true
-					online++
 		if !player.online and clear
 			player.board = []
 			player.piece = null
 		player.save()
 				
-	game.players = online
 	game.save()
 	
 $ ()->

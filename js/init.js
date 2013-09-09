@@ -53,7 +53,10 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   }
   if (game.pause) {
     controllers.pause();
-    return $('#pause').text('Resume');
+    $('#pause').text('Resume');
+  }
+  if (controllers.boards.length !== online.length) {
+    return console.log('will add the other user to boards');
   }
 };
 
@@ -121,37 +124,82 @@ window.sync_players_on_callback = function() {
     $('.mask').hide();
     return Game.sync_all(function() {
       return Player.sync_all(function() {
-        var collabrators, game, i, joined, me, one, player, players, _i, _j, _len;
-        me = {};
-        collabrators = doc.getCollaborators();
-        for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
-          one = collabrators[_i];
-          if (one.isMe) {
-            localStorage['current'] = JSON.stringify(one);
-            me = one;
-          }
-        }
-        game = Game.first();
-        players = Player.all();
-        player = {
-          'name': me.displayName,
-          'userid': me.userId,
-          'avatar': me.photoUrl,
-          'board': [],
-          'piece': null,
-          'online': true
-        };
-        if (!game) {
-          game = Game.create();
-          game.owner = me.userId;
-          game.state = 2;
-          game.restart = 0;
-          game.over = 0;
-          game.pause = 0;
-          game.resum = 0;
-          game.players = 1;
-          one = Player.create();
-          one.name = player.name;
+        check_online();
+        return join_me();
+      });
+    });
+  }
+};
+
+window.join_me = function() {
+  var collabrators, game, i, joined, me, one, player, players, _i, _j, _k, _len;
+  me = {};
+  collabrators = doc.getCollaborators();
+  for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
+    one = collabrators[_i];
+    if (one.isMe) {
+      localStorage['current'] = JSON.stringify(one);
+      me = one;
+    }
+  }
+  game = Game.first();
+  players = Player.all();
+  player = {
+    'name': me.displayName,
+    'userid': me.userId,
+    'avatar': me.photoUrl,
+    'board': [],
+    'piece': null,
+    'online': true
+  };
+  if (!game) {
+    game = Game.create();
+    game.owner = me.userId;
+    game.state = 2;
+    game.restart0 = 0;
+    game.restart1 = 0;
+    game.over = 0;
+    game.pause = 0;
+    game.resume = 0;
+    game.players = 1;
+    one = Player.create();
+    one.name = player.name;
+    one.userid = player.userid;
+    one.avatar = player.avatar;
+    one.piece = player.piece;
+    one.board = player.board;
+    one.online = true;
+    one.index = 0;
+    joined = true;
+    one.save();
+  } else {
+    joined = false;
+    for (i = _j = 0; _j < 2; i = ++_j) {
+      if (joined) {
+        continue;
+      }
+      one = players[i];
+      if (one && one.userid === player.userid) {
+        one.online = true;
+        joined = true;
+      } else if (!one) {
+        one = Player.create();
+        one.name = player.name;
+        one.userid = player.userid;
+        one.avatar = player.avatar;
+        one.piece = player.piece;
+        one.board = player.board;
+        one.online = true;
+        one.index = i;
+        joined = true;
+      }
+      one.save();
+    }
+    if (!joined) {
+      for (i = _k = 0; _k < 2; i = ++_k) {
+        one = players[i];
+        if (!one.online) {
+          one.name = Player.name;
           one.userid = player.userid;
           one.avatar = player.avatar;
           one.piece = player.piece;
@@ -159,53 +207,28 @@ window.sync_players_on_callback = function() {
           one.online = true;
           one.index = i;
           joined = true;
-          one.save();
-        } else {
-          check_online();
-          joined = false;
-          for (i = _j = 0; _j < 2; i = ++_j) {
-            if (joined) {
-              continue;
-            }
-            one = players[i];
-            if (one && one.userid === player.userid) {
-              one.online = true;
-              joined = true;
-            } else if (!one) {
-              one = Player.create();
-              one.name = player.name;
-              one.userid = player.userid;
-              one.avatar = player.avatar;
-              one.piece = player.piece;
-              one.board = player.board;
-              one.online = true;
-              one.index = i;
-              joined = true;
-            }
-            one.save();
-          }
+          break;
         }
-        if (!joined) {
-          console.log('waiting...');
-        }
-        game.restart0 = 0;
-        game.restart1 = 0;
-        game.save();
-        return window.controllers = new Tetris.Controller(game);
-      });
-    });
+      }
+    }
   }
+  if (!joined) {
+    console.log('waiting...');
+  }
+  game.restart0 = 0;
+  game.restart1 = 0;
+  game.save();
+  return window.controllers = new Tetris.Controller(game);
 };
 
 window.check_online = function(clear) {
-  var collabrators, game, i, one, online, original, player, players, _i, _j, _len;
+  var collabrators, game, i, one, original, player, players, _i, _j, _len;
   original = game = Game.first();
   if (!game) {
     return;
   }
   players = Player.all();
   collabrators = doc.getCollaborators();
-  online = 0;
   for (i = _i = 0; _i < 2; i = ++_i) {
     player = players[i];
     if (!player) {
@@ -217,7 +240,6 @@ window.check_online = function(clear) {
       if (player) {
         if (player.userid === one.userId) {
           player.online = true;
-          online++;
         }
       }
     }
@@ -227,7 +249,6 @@ window.check_online = function(clear) {
     }
     player.save();
   }
-  game.players = online;
   return game.save();
 };
 
