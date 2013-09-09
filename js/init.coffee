@@ -1,6 +1,3 @@
-if location.search and location.search.substr(1)
-	localStorage['doc_id'] = location.search.substr(1)
-	location.href = location.origin+location.pathname
 
 sync = 
 	'GDrive':
@@ -9,6 +6,15 @@ sync =
 		"app_name": "tetris"
 
 Nimbus.Auth.setup(sync)
+Game = Nimbus.Model.setup('Game',['player0','player1','state','players','restart','restart0','restart1','pause','resume','over','owner'])
+Player = Nimbus.Model.setup('Player',['name','userid','avatar','piece','index','board','online'])
+
+if location.search and location.search.substr(1)
+	localStorage['doc_id'] = location.search.substr(1)
+	Game.destroyAll()
+	Player.destroyAll()
+	location.href = location.origin+location.pathname
+
 window.realtime_update_handler = (event,obj,isLocal)->
 	if !window.controllers
 		return
@@ -17,7 +23,7 @@ window.realtime_update_handler = (event,obj,isLocal)->
 	boards = controllers.boards
 	current = JSON.parse(localStorage['current'])
 	me = Player.findByAttribute('userid',current.userId)
-	online = Player.findAllByAttribut('online',true)
+	online = Player.findAllByAttribute('online',true)
 	# do the drawing
 	for board in boards
 		if board and board.playerRef
@@ -25,13 +31,13 @@ window.realtime_update_handler = (event,obj,isLocal)->
 			board.snapshot = player.piece
 			board.draw()
 
-	if game.restart0 or game.restart1
-		if game['restart'+me.index]
-			game['restart'+me.index] =0
-			game.save()
-			controllers.restartGame()
-			$('#pause').text('Pause')
-	
+	if game['restart' + (1-controllers.myPlayerIndex)]
+		console.log('restart' + (1-controllers.myPlayerIndex))
+		game['restart' + (1-controllers.myPlayerIndex)] = 0
+		game.save()
+		controllers.restartGame()
+		$('#pause').text('Pause')
+
 	if game.resume
 		if !isLocal
 			game.resume = 0
@@ -39,14 +45,37 @@ window.realtime_update_handler = (event,obj,isLocal)->
 		controllers.resume()
 		$("#pause").text('Pause')
 	if game.pause
-		controller.pause()
+		controllers.pause()
 		$('#pause').text('Resume')
 
-	# if controllers.boards.length isnt online.length
+	if controllers.boards.length < online.length
 		#login new user
+		console.log 'will add the other user to boards'
+		index = 1-controllers.myPlayerIndex
+		canvas = $('#canvas' + index).get(0)
+		player = Player.all()[index]
+		board = new Tetris.Board(canvas,player,index)
+		$('.player_name'+index).text(player.name)
+		controllers.boards.push(board)
 
-Game = Nimbus.Model.setup('Game',['player0','player1','state','players','restart','restart0','restart1','pause','resume','over','owner'])
-Player = Nimbus.Model.setup('Player',['name','userid','avatar','piece','index','board','online'])
+window.collaborator_left_callback = (evt)->
+	# process user left event 
+	user = evt.collaborator
+	players = Player.all()
+	for player in players
+		if player.userid is user.userId
+			player.online = false
+			player.save()
+
+			# stop the board
+			if controllers.boards
+				for board in controllers.boards
+					if board.playerRef.userid is player.userid
+						index = controllers.boards.indexOf(board)
+						controllers.boards.splice(index,1)
+
+			break
+
 
 Nimbus.Auth.set_app_ready(()->
 	search = localStorage['doc_id']
@@ -82,34 +111,76 @@ window.sync_players_on_callback = ()->
 
 		Game.sync_all(()->
 			Player.sync_all(()->
-				me = {}
-				collabrators = doc.getCollaborators()
-				for one in collabrators
-					if one.isMe
-						localStorage['current'] = JSON.stringify(one);
-						me = one
-				game = Game.first()
-				players = Player.all()
+				# check all player status
+				check_online()
+				# join current user
+				join_me()
+			)
+			
+		)
+window.join_me = ()->
+	me = {}
+	collabrators = doc.getCollaborators()
+	for one in collabrators
+		if one.isMe
+			localStorage['current'] = JSON.stringify(one);
+			me = one
+	game = Game.first()
+	players = Player.all()
 
-				player = 
-					'name' : me.displayName
-					'userid':me.userId
-					'avatar':me.photoUrl
-					'board' : []
-					'piece' : null
-					'online': true
-				if !game
-					game = Game.create()
-					game.owner = me.userId
-					game.state = 2
-					game.restart = 0
-					game.over = 0
-					game.pause = 0
-					game.resum = 0
-					game.players = 1
+	player = 
+		'name' : me.displayName
+		'userid':me.userId
+		'avatar':me.photoUrl
+		'board' : []
+		'piece' : null
+		'online': true
+	if !game
+		game = Game.create()
+		game.owner = me.userId
+		game.state = 2
+		game.restart0 = 0
+		game.restart1 = 0
+		game.over = 0
+		game.pause = 0
+		game.resume = 0
+		game.players = 1
 
-					# add user 
-					one  = Player.create()
+		# add user 
+		one  = Player.create()
+		one.name = player.name
+		one.userid = player.userid
+		one.avatar = player.avatar
+		one.piece = player.piece
+		one.board = player.board
+		one.online = true
+		one.index = 0
+		joined = true
+		one.save()
+	else
+		joined = false
+		for i in [0...2]
+			continue if joined
+			one = players[i]
+			if one and one.userid is player.userid
+				one.online = true
+				joined = true
+			else if !one
+				one  = Player.create()
+				one.name = player.name
+				one.userid = player.userid
+				one.avatar = player.avatar
+				one.piece = player.piece
+				one.board = player.board
+				one.online = true
+				one.index = i
+				joined = true
+			one.save()
+		# still not joined ,check offline user
+		if !joined
+			for i in [0...2]
+				one = players[i]
+				if !one.online
 					one.name = player.name
 					one.userid = player.userid
 					one.avatar = player.avatar
@@ -117,45 +188,22 @@ window.sync_players_on_callback = ()->
 					one.board = player.board
 					one.online = true
 					one.index = i
-					joined = true
 					one.save()
-				else
-					check_online()
-					joined = false
-					for i in [0...2]
-						continue if !joined
-						one = players[i]
-						if one and one.userid is player.userid
-							one.online = true
-							joined = true
-						else if !one
-							one  = Player.create()
-							one.name = player.name
-							one.userid = player.userid
-							one.avatar = player.avatar
-							one.piece = player.piece
-							one.board = player.board
-							one.online = true
-							one.index = i
-							joined = true
-						one.save()
-				if !joined
-					console.log 'waiting...'
-				game.restart0 = 0		
-				game.restart1 = 0		
-				game.save()
-				
-				window.controllers = new Tetris.Controller(game)
-			)
-			
-		)
-		
-window.check_online = ()->
+					joined = true
+					break
+	# not available ,set waiting 
+	if !joined
+		console.log 'waiting...'
+	game.restart0 = 0		
+	game.restart1 = 0		
+	game.save()
+	
+	window.controllers = new Tetris.Controller(game)		
+window.check_online = (clear)->
 	original = game = Game.first()
 	return if !game
 	players = Player.all()
 	collabrators = doc.getCollaborators()
-	online = 0
 	for i in [0...2]
 		player = players[i]
 		continue if !player
@@ -164,20 +212,25 @@ window.check_online = ()->
 			if player
 				if player.userid is one.userId
 					player.online = true
-					online++
+		if !player.online and clear
+			player.board = []
+			player.piece = null
 		player.save()
-
-	game.players = online
+				
 	game.save()
 	
 $ ()->
-
+	# login user
 	$('a#login').click(()->
 		console.log 'auth start...'
 		Nimbus.Auth.authorize('GDrive')
 		false
 	)
-
+	# start a new game
+	$('a#new_game').click(()->
+		
+	)
+	# logout user
 	$('a#logout').click(()->
 		Nimbus.Auth.logout()
 		location.reload()
@@ -192,7 +245,6 @@ $ ()->
 			game.save()
 			$(this).text('Resume')
 		else if $(this).text() is 'Resume'
-			# ...game = Game.first()
 			game.pause = 0
 			game.resume = 1
 			game.save()
@@ -201,13 +253,15 @@ $ ()->
 	)
 
 	$('#restart').click(()->
+		check_online(true)
 		game = Game.first()
-		game.restart0 = 1
-		game.restart1 = 1
+		game['restart'+controllers.myPlayerIndex] = 1
 		game.resume = 0
 		game.pause = 0
+		game.over = 0
 		game.save()
 		$('#pause').text('Pause')
+		controllers.restartGame()
 		false
 	)
 
@@ -216,7 +270,8 @@ $ ()->
 		# check email
 		Nimbus.Share.add_share_user_real(email,(user)->
 			console.log('file shared')
-			link = location.origin + location.pathname + '?'+ window.c_file.id
+			id = if !localStorage['doc_id'] then  window.c_file.id else localStorage['doc_id']
+			link = location.origin + location.pathname + '?'+ id
 			$.prompt('Copy and send this link to your friend: ' + link)
 		)
 		false

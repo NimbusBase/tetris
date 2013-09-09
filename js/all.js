@@ -3253,18 +3253,87 @@
       return this.fetch(this.proxy(this.loadLocal));
     },
     saveLocal: function() {
-      var result;
+      var indexedDB, req, result, self;
       result = JSON.stringify(this);
-      return localStorage[this.name] = result;
-    },
-    loadLocal: function() {
-      var result;
-      result = localStorage[this.name];
-      if (!result) {
+      indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
+      if (!indexedDB) {
+        localStorage[this.name] = result;
         return;
       }
-      result = JSON.parse(result);
-      return this.refresh(result);
+      if (!localStorage['app_name']) {
+        localStorage['app_name'] = Nimbus.Auth.app_name;
+      }
+      req = indexedDB.open(localStorage['app_name'], 1);
+      self = this;
+      req.onerror = function(evt) {
+        console.log('indexedDB error on save');
+        return localStorage[this.name] = result;
+      };
+      req.onupgradeneeded = function() {
+        var db, obj;
+        db = req.result;
+        return obj = db.createObjectStore('models', {
+          keyPath: 'key'
+        });
+      };
+      return req.onsuccess = function(evt) {
+        var db, store, tx;
+        db = req.result;
+        tx = db.transaction('models', "readwrite");
+        store = tx.objectStore('models');
+        store.put({
+          key: self.name,
+          data: result
+        });
+        return db.close();
+      };
+    },
+    loadLocal: function() {
+      var indexedDB, req, result, self;
+      indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
+      if (!indexedDB) {
+        result = localStorage[this.name];
+        if (!result) {
+          return;
+        }
+        result = JSON.parse(result);
+        this.refresh(result);
+      }
+      self = this;
+      req = indexedDB.open(localStorage['app_name']);
+      req.onerror = function(evt) {
+        console.log('indexedDB error ,turn to localStorage');
+        result = localStorage[this.name];
+        if (!result) {
+          return;
+        }
+        result = JSON.parse(result);
+        return this.refresh(result);
+      };
+      req.onupgradeneeded = function() {
+        var db, obj;
+        db = req.result;
+        return obj = db.createObjectStore('models', {
+          keyPath: 'key'
+        });
+      };
+      return req.onsuccess = function() {
+        var db, find, store, tx;
+        db = req.result;
+        tx = db.transaction('models', "readonly");
+        store = tx.objectStore('models');
+        find = store.openCursor(IDBKeyRange.only(self.name));
+        find.onsuccess = function() {
+          if (!find.result) {
+            return;
+          }
+          if (find.result.value.data) {
+            result = JSON.parse(find.result.value.data);
+            return self.refresh(result);
+          }
+        };
+        return db.close();
+      };
     }
   };
 
@@ -3620,14 +3689,14 @@
 
   window.initializeModel = function(model) {
     var field;
-    console.log("model initialization", model);
+    log("model initialization", model);
     field = model.createMap({});
     return model.getRoot().set("todo", field);
   };
 
   window.onFileLoaded = function(doc) {
     var process_event, todo;
-    console.log("file loaded", doc);
+    log("file loaded", doc);
     window.doc = doc;
     process_event = function(event) {
       var a, current_event, model, obj;
@@ -3663,7 +3732,7 @@
       }
       log("EVENT: ", current_event, " OBJ: ", obj);
       if (window.realtime_update_handler != null) {
-        return window.realtime_update_handler(current_event, obj,event.isLocal);
+        return window.realtime_update_handler(current_event, obj, event.isLocal);
       }
     };
     todo = doc.getModel().getRoot().get("todo");
@@ -3671,7 +3740,7 @@
     if (window.real_time_callback != null) {
       window.real_time_callback();
     }
-    return todo.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, process_event);
+    todo.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, process_event);
   };
 
   window.create_share_client = function() {
@@ -3697,48 +3766,53 @@
       window.real_time_callback = callback;
     }
     return gapi.load("auth:client,drive-realtime,drive-share", function() {
-      console.log("gapi for everything loaded");
+      log("gapi for everything loaded");
       return Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", function(data) {
         var c_file, i, x, _i, _len, _ref;
-        console.log("drive apps", data);
+        log("drive apps", data);
         i = [];
         _ref = data.items;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           x = _ref[_i];
-          console.log(x.mimeType);
+          log(x.mimeType);
           if (x.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0) {
             i.push(x);
           }
         }
-        console.log("index", i);
+        log("index", i);
         if (i.length > 0) {
-          console.log("file there");
+          log("file there");
           c_file = i[0];
           window.c_file = c_file;
           return gapi.drive.realtime.load(c_file.id, onFileLoaded, initializeModel, handleErrors);
         } else {
-          console.log("file not there");
+          log("file not there");
           Nimbus.Client.GDrive.insertFile("", Nimbus.Auth.app_name, 'application/vnd.google-apps.drive-sdk', null, function(data) {
-            console.log("finished insertFile", data);
+            log("finished insertFile", data);
             window.c_file = data;
             return gapi.drive.realtime.load(data.id, onFileLoaded, initializeModel, handleErrors);
           });
-          return console.log("need to create file for app");
+          return log("need to create file for app");
         }
       });
     });
   };
 
-  window.load_new_file = function(file_id, callback,exception_handle) {
-    console.log(exception_handle instanceof Function);
+  window.load_new_file = function(file_id, callback, exception_handle) {
     if (callback != null) {
       window.real_time_callback = callback;
     }
-     if (exception_handle && exception_handle instanceof Function) {
-      return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, exception_handle);
-    } else {
-      return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, handleErrors);
-    }
+    Nimbus.Share.getFile(file_id,function(data){
+      if (!data.id) {
+        return;
+      };
+      c_file = data;
+      if (exception_handle && exception_handle instanceof Function) {
+        return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, exception_handle);
+      } else {
+        return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, handleErrors);
+      }
+    });
   };
 
   Nimbus.Client.Dropbox = {
