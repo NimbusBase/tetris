@@ -3,6 +3,8 @@ var Game, Player, sync;
 
 if (location.search && location.search.substr(1)) {
   localStorage['doc_id'] = location.search.substr(1);
+  Game.destroyAll();
+  Player.destroyAll();
   location.href = location.origin + location.pathname;
 }
 
@@ -17,7 +19,7 @@ sync = {
 Nimbus.Auth.setup(sync);
 
 window.realtime_update_handler = function(event, obj, isLocal) {
-  var board, boards, current, game, me, online, player, _i, _len;
+  var board, boards, canvas, current, game, index, me, online, player, _i, _len;
   if (!window.controllers) {
     return;
   }
@@ -34,14 +36,12 @@ window.realtime_update_handler = function(event, obj, isLocal) {
       board.draw();
     }
   }
-  if (game.restart0 || game.restart1) {
-    if (game['restart' + me.index]) {
-      check_online(true);
-      game['restart' + me.index] = 0;
-      game.save();
-      controllers.restartGame();
-      $('#pause').text('Pause');
-    }
+  if (game['restart' + (1 - controllers.myPlayerIndex)]) {
+    console.log('restart' + (1 - controllers.myPlayerIndex));
+    game['restart' + (1 - controllers.myPlayerIndex)] = 0;
+    game.save();
+    controllers.restartGame();
+    $('#pause').text('Pause');
   }
   if (game.resume) {
     if (!isLocal) {
@@ -55,8 +55,14 @@ window.realtime_update_handler = function(event, obj, isLocal) {
     controllers.pause();
     $('#pause').text('Resume');
   }
-  if (controllers.boards.length !== online.length) {
-    return console.log('will add the other user to boards');
+  if (controllers.boards.length < online.length) {
+    console.log('will add the other user to boards');
+    index = 1 - controllers.myPlayerIndex;
+    canvas = $('#canvas' + index).get(0);
+    player = Player.all()[index];
+    board = new Tetris.Board(canvas, player, index);
+    $('.player_name' + index).text(player.name);
+    return controllers.boards.push(board);
   }
 };
 
@@ -199,13 +205,14 @@ window.join_me = function() {
       for (i = _k = 0; _k < 2; i = ++_k) {
         one = players[i];
         if (!one.online) {
-          one.name = Player.name;
+          one.name = player.name;
           one.userid = player.userid;
           one.avatar = player.avatar;
           one.piece = player.piece;
           one.board = player.board;
           one.online = true;
           one.index = i;
+          one.save();
           joined = true;
           break;
         }
@@ -282,14 +289,15 @@ $(function() {
   });
   $('#restart').click(function() {
     var game;
+    check_online(true);
     game = Game.first();
-    game.restart0 = 1;
-    game.restart1 = 1;
+    game['restart' + controllers.myPlayerIndex] = 1;
     game.resume = 0;
     game.pause = 0;
     game.over = 0;
     game.save();
     $('#pause').text('Pause');
+    controllers.restartGame();
     return false;
   });
   $('#invite').click(function() {

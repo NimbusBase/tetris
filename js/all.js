@@ -3741,12 +3741,6 @@
       window.real_time_callback();
     }
     todo.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, process_event);
-    if (window.collaborator_left_callback) {
-      todo.addEventListener(gapi.drive.realtime.EventType.CollaboratorLeftEvent, collaborator_left_callback);
-    }
-    if (window.collaborator_join_callback) {
-      return todo.addEventListener(gapi.drive.realtime.EventType.CollaboratorJoinedEvent, collaborator_join_callback);
-    }
   };
 
   window.create_share_client = function() {
@@ -3808,11 +3802,17 @@
     if (callback != null) {
       window.real_time_callback = callback;
     }
-    if (exception_handle && exception_handle instanceof Function) {
-      return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, exception_handle);
-    } else {
-      return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, handleErrors);
-    }
+    Nimbus.Share.getFile(file_id,function(data){
+      if (!data.id) {
+        return;
+      };
+      c_file = data;
+      if (exception_handle && exception_handle instanceof Function) {
+        return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, exception_handle);
+      } else {
+        return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, handleErrors);
+      }
+    });
   };
 
   Nimbus.Client.Dropbox = {
