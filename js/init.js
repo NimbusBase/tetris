@@ -32,6 +32,9 @@ window.realtime_update_handler = function(event, obj, isLocal) {
   current = JSON.parse(localStorage['current']);
   me = Player.findByAttribute('userid', current.userId);
   online = Player.findAllByAttribute('online', true);
+  if (!game) {
+    return;
+  }
   for (_i = 0, _len = boards.length; _i < _len; _i++) {
     board = boards[_i];
     if (board && board.playerRef) {
@@ -265,7 +268,17 @@ $(function() {
     Nimbus.Auth.authorize('GDrive');
     return false;
   });
-  $('a#new_game').click(function() {});
+  $('a#new_game').click(function() {
+    doc.close();
+    Nimbus.Share.deleteFile(c_file.id, function() {
+      controllers.boards = [];
+      controllers.new_game();
+      Game.destroyAll();
+      Player.destroyAll();
+      return startRealtime();
+    });
+    return false;
+  });
   $('a#logout').click(function() {
     Nimbus.Auth.logout();
     location.reload();

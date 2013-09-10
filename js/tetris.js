@@ -609,6 +609,16 @@ var Tetris = { };
     this.resetGravity();
   }
 
+  Tetris.Controller.prototype.new_game = function(){
+    for (var i =0; i <2; i++) {
+      var context = $('#canvas'+i).get(0).getContext('2d');
+      context.clearRect(0, 0, Tetris.BOARD_WIDTH_PIXELS, Tetris.BOARD_HEIGHT_PIXELS);
+      $('.player_name'+i).text('Player'+i);
+      var avatar = 'https://lh3.googleusercontent.com/-XdUIqdMkCWA/AAAAAAAAAAI/AAAAAAAAAAA/4252rscbv5M/s128/photo.jpg';
+      $('#avatar'+i).attr('src',avatar);
+    };
+  }
+
   Tetris.Controller.prototype.resetMyBoardAndPiece = function () {
     this.myBoard.clear();
     var newPiece = new Tetris.Piece();

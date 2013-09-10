@@ -24,6 +24,7 @@ window.realtime_update_handler = (event,obj,isLocal)->
 	current = JSON.parse(localStorage['current'])
 	me = Player.findByAttribute('userid',current.userId)
 	online = Player.findAllByAttribute('online',true)
+	return unless game
 	# do the drawing
 	for board in boards
 		if board and board.playerRef
@@ -228,7 +229,18 @@ $ ()->
 	)
 	# start a new game
 	$('a#new_game').click(()->
+		doc.close()
+		# delete file is being used
+		Nimbus.Share.deleteFile(c_file.id,()->
+			# setup new file
+			controllers.boards = []
+			controllers.new_game()
+			Game.destroyAll()
+			Player.destroyAll()
+			startRealtime()
+		)
 		
+		false
 	)
 	# logout user
 	$('a#logout').click(()->
