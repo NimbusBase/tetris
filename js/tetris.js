@@ -416,7 +416,9 @@ var Tetris = { };
     //set playing
     // var id = this.myPlayerRef.userid,
     //     player;
-    this.myBoard.draw();
+    if (this.myBoard) {
+      this.myBoard.draw();
+    };
 
     this.initializePiece();
     this.enableKeyboard();
@@ -613,7 +615,7 @@ var Tetris = { };
     for (var i =0; i <2; i++) {
       var context = $('#canvas'+i).get(0).getContext('2d');
       context.clearRect(0, 0, Tetris.BOARD_WIDTH_PIXELS, Tetris.BOARD_HEIGHT_PIXELS);
-      $('.player_name'+i).text('Player'+i);
+      $('.player_name'+i).text('Player'+(i+1));
       var avatar = 'https://lh3.googleusercontent.com/-XdUIqdMkCWA/AAAAAAAAAAI/AAAAAAAAAAA/4252rscbv5M/s128/photo.jpg';
       $('#avatar'+i).attr('src',avatar);
     };

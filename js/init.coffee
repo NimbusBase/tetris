@@ -229,7 +229,6 @@ $ ()->
 	)
 	# start a new game
 	$('a#new_game').click(()->
-		doc.close()
 		# delete file is being used
 		Nimbus.Share.deleteFile(c_file.id,()->
 			# setup new file

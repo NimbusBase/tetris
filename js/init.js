@@ -269,7 +269,6 @@ $(function() {
     return false;
   });
   $('a#new_game').click(function() {
-    doc.close();
     Nimbus.Share.deleteFile(c_file.id, function() {
       controllers.boards = [];
       controllers.new_game();
