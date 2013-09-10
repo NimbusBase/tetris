@@ -268,38 +268,34 @@ $(function() {
     return false;
   });
   $('a#new_game').click(function() {
+    controllers.pause();
+    controllers.boards = [];
+    controllers.new_game();
+    Game.destroyAll();
+    Player.destroyAll();
     if (c_file.userPermission.role === 'writer') {
       delete localStorage['doc_id'];
       Nimbus.Share.get_current_user(function(user) {
-        var item;
-        return Nimbus.Share.get_shared_users(function(res) {}, (function() {
-          var _i, _len, _results;
+        return Nimbus.Share.get_shared_users_real(function(res) {
+          var item, _i, _len, _results;
           _results = [];
           for (_i = 0, _len = res.length; _i < _len; _i++) {
             item = res[_i];
             if (item.id === user.id) {
-              Nimbus.Share.remove_share_user_real(item.id);
+              Nimbus.Share.remove_share_user_real(item.id, function() {
+                return startRealtime();
+              });
               break;
             } else {
               _results.push(void 0);
             }
           }
           return _results;
-        })());
+        });
       });
+    } else {
+      startRealtime();
     }
-    controllers.boards = [];
-    controllers.new_game();
-    Game.destroyAll();
-    Player.destroyAll();
-    startRealtime();
-    Nimbus.Share.deleteFile(c_file.id, function() {
-      controllers.boards = [];
-      controllers.new_game();
-      Game.destroyAll();
-      Player.destroyAll();
-      return startRealtime();
-    });
     return false;
   });
   $('a#logout').click(function() {
