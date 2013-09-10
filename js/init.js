@@ -129,7 +129,6 @@ Nimbus.Auth.set_app_ready(function() {
 
 window.sync_players_on_callback = function() {
   if (Nimbus.Auth.authorized()) {
-    $('#login').text('Logout');
     $('.mask').hide();
     return Game.sync_all(function() {
       return Player.sync_all(function() {
@@ -269,6 +268,31 @@ $(function() {
     return false;
   });
   $('a#new_game').click(function() {
+    if (c_file.userPermission.role === 'writer') {
+      delete localStorage['doc_id'];
+      Nimbus.Share.get_current_user(function(user) {
+        var item;
+        return Nimbus.Share.get_shared_users(function(res) {}, (function() {
+          var _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = res.length; _i < _len; _i++) {
+            item = res[_i];
+            if (item.id === user.id) {
+              Nimbus.Share.remove_share_user_real(item.id);
+              break;
+            } else {
+              _results.push(void 0);
+            }
+          }
+          return _results;
+        })());
+      });
+    }
+    controllers.boards = [];
+    controllers.new_game();
+    Game.destroyAll();
+    Player.destroyAll();
+    startRealtime();
     Nimbus.Share.deleteFile(c_file.id, function() {
       controllers.boards = [];
       controllers.new_game();

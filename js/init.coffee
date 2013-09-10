@@ -107,7 +107,6 @@ Nimbus.Auth.set_app_ready(()->
 window.sync_players_on_callback = ()->
 	# check auth
 	if Nimbus.Auth.authorized()
-		$('#login').text('Logout')
 		$('.mask').hide()
 
 		Game.sync_all(()->
@@ -230,6 +229,23 @@ $ ()->
 	# start a new game
 	$('a#new_game').click(()->
 		# delete file is being used
+		if c_file.userPermission.role is 'writer'
+			delete localStorage['doc_id']
+			Nimbus.Share.get_current_user((user)->
+				Nimbus.Share.get_shared_users((res)->
+				for item in res
+					if item.id is user.id
+						Nimbus.Share.remove_share_user_real(item.id)
+						break
+				)
+			)
+			
+		controllers.boards = []
+		controllers.new_game()
+		Game.destroyAll()
+		Player.destroyAll()
+		startRealtime()
+		
 		Nimbus.Share.deleteFile(c_file.id,()->
 			# setup new file
 			controllers.boards = []
