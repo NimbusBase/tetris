@@ -128,8 +128,16 @@ Nimbus.Auth.set_app_ready(function() {
 });
 
 window.sync_players_on_callback = function() {
-  var current, profile;
+  var collabrators, current, one, profile, _i, _len;
   if (Nimbus.Auth.authorized()) {
+    collabrators = doc.getCollaborators();
+    for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
+      one = collabrators[_i];
+      if (one.isMe) {
+        localStorage['current'] = JSON.stringify(one);
+        break;
+      }
+    }
     if (app_files && app_files.length < 2) {
       $('.mask').hide();
       return process_game_data();
@@ -165,16 +173,8 @@ window.process_game_data = function() {
 };
 
 window.join_me = function() {
-  var collabrators, game, i, joined, me, one, player, players, _i, _j, _k, _len;
-  me = {};
-  collabrators = doc.getCollaborators();
-  for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
-    one = collabrators[_i];
-    if (one.isMe) {
-      localStorage['current'] = JSON.stringify(one);
-      me = one;
-    }
-  }
+  var game, i, joined, me, one, player, players, _i, _j;
+  me = JSON.parse(localStorage['current']);
   game = Game.first();
   players = Player.all();
   player = {
@@ -201,7 +201,7 @@ window.join_me = function() {
     one.save();
   } else {
     joined = false;
-    for (i = _j = 0; _j < 2; i = ++_j) {
+    for (i = _i = 0; _i < 2; i = ++_i) {
       if (joined) {
         continue;
       }
@@ -217,7 +217,7 @@ window.join_me = function() {
       one.save();
     }
     if (!joined) {
-      for (i = _k = 0; _k < 2; i = ++_k) {
+      for (i = _j = 0; _j < 2; i = ++_j) {
         one = players[i];
         if (!one.online) {
           one.name = player.name;
@@ -274,6 +274,29 @@ window.check_online = function(clear) {
   return game.save();
 };
 
+window.erase_indexedDB = function(callback) {
+  var indexedDB, req;
+  indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
+  req = indexedDB.open('tetris', 1);
+  req.onsuccess = function(evt) {
+    var db, store, tx;
+    db = evt.target.result;
+    tx = db.transaction('models', "readwrite");
+    store = tx.objectStore('models');
+    store.put({
+      key: 'Game',
+      data: ''
+    });
+    store.put({
+      key: 'Player',
+      data: ''
+    });
+    if (callback) {
+      return callback();
+    }
+  };
+};
+
 $(function() {
   $('.panel .list').on('click', function(evt) {
     var file_id;
@@ -291,31 +314,33 @@ $(function() {
   });
   $('a#new_game').click(function() {
     controllers.new_game();
-    Player.destroyAll();
-    Game.destroyAll();
-    Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", function(data) {
-      var file, list, _i, _len, _ref;
-      list = [];
-      _ref = data.items;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        file = _ref[_i];
-        if (file.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0) {
-          list.push(file);
+    erase_indexedDB(function() {
+      return Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", function(data) {
+        var file, list, _i, _len, _ref;
+        list = [];
+        _ref = data.items;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          file = _ref[_i];
+          if (file.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0) {
+            list.push(file);
+          }
         }
-      }
-      if (list.length && list) {
-        window.app_files = list;
-        list_games();
-        return $('.mask').fadeIn();
-      } else {
-        return startRealtime();
-      }
+        if (list.length && list) {
+          window.app_files = list;
+          list_games();
+          return $('.mask').fadeIn();
+        } else {
+          return startRealtime();
+        }
+      });
     });
     return false;
   });
   $('a#logout').click(function() {
-    Nimbus.Auth.logout();
-    location.reload();
+    erase_indexedDB(function() {
+      Nimbus.Auth.logout();
+      return location.reload();
+    });
     return false;
   });
   $('#pause').click(function() {

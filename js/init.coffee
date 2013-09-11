@@ -107,6 +107,11 @@ Nimbus.Auth.set_app_ready(()->
 window.sync_players_on_callback = ()->
 	# check auth
 	if Nimbus.Auth.authorized()
+		collabrators = doc.getCollaborators()
+		for one in collabrators
+			if one.isMe
+				localStorage['current'] = JSON.stringify(one)
+				break
 		if app_files and app_files.length < 2
 			$('.mask').hide()
 			process_game_data()
@@ -137,12 +142,8 @@ window.process_game_data = ()->
 	)
 
 window.join_me = ()->
-	me = {}
-	collabrators = doc.getCollaborators()
-	for one in collabrators
-		if one.isMe
-			localStorage['current'] = JSON.stringify(one);
-			me = one
+	me = JSON.parse(localStorage['current'])
+	
 	game = Game.first()
 	players = Player.all()
 
@@ -224,7 +225,23 @@ window.check_online = (clear)->
 		player.save()
 				
 	game.save()
-	
+window.erase_indexedDB = (callback)->
+	indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB
+	req = indexedDB.open('tetris',1)
+	req.onsuccess = (evt)->
+		db = evt.target.result
+		tx = db.transaction('models', "readwrite")
+		store = tx.objectStore('models')
+		store.put(
+			key: 'Game'
+			data: ''
+		)
+		store.put(
+			key:'Player'
+			data: ''
+		)
+		callback() if callback
+	return
 $ ()->
 	$('.panel .list').on('click',(evt)->
 		file_id = $(evt.target).data('id')
@@ -244,27 +261,30 @@ $ ()->
 	$('a#new_game').click(()->
 		# delete file is being used
 		controllers.new_game()
-		Player.destroyAll()
-		Game.destroyAll()
-		Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", (data)->
-			list = []
-			for file in data.items
-				if file.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0
-					list.push(file)
+		erase_indexedDB(()->
+			Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", (data)->
+				list = []
+				for file in data.items
+					if file.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0
+						list.push(file)
 
-			if list.length and list
-				window.app_files = list
-				list_games()
-				$('.mask').fadeIn()
-			else
-				startRealtime()
+				if list.length and list
+					window.app_files = list
+					list_games()
+					$('.mask').fadeIn()
+				else
+					startRealtime()
+			)
 		)
+		
 		false
 	)
 	# logout user
 	$('a#logout').click(()->
-		Nimbus.Auth.logout()
-		location.reload()
+		erase_indexedDB(()->
+			Nimbus.Auth.logout()
+			location.reload()
+		)
 		false
 	)
 
