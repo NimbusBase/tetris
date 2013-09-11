@@ -128,8 +128,10 @@ Nimbus.Auth.set_app_ready(function() {
 });
 
 window.sync_players_on_callback = function() {
-  var collabrators, current, one, profile, _i, _len;
+  var collabrators, one, url, _i, _len;
   if (Nimbus.Auth.authorized()) {
+    url = location.pathname + '?' + c_file.id;
+    window.history.pushState("Game Started", "Nimbus Tetris", url);
     collabrators = doc.getCollaborators();
     for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
       one = collabrators[_i];
@@ -142,10 +144,6 @@ window.sync_players_on_callback = function() {
       $('.mask').hide();
       return process_game_data();
     } else {
-      profile = '';
-      current = JSON.parse(localStorage['current']);
-      $('.panel .profile img').attr('src', current.photoUrl);
-      $('.panel .profile span').text(current.displayName);
       list_games();
       $('#login').hide();
       return $('.mask .panel').slideDown();
@@ -154,8 +152,12 @@ window.sync_players_on_callback = function() {
 };
 
 window.list_games = function() {
-  var file, html, _i, _len;
+  var current, file, html, profile, _i, _len;
   html = '';
+  profile = '';
+  current = JSON.parse(localStorage['current']);
+  $('.panel .profile img').attr('src', current.photoUrl);
+  $('.panel .profile span').text(current.displayName);
   for (_i = 0, _len = app_files.length; _i < _len; _i++) {
     file = app_files[_i];
     html += '<li class="game"><a href="#" data-id="' + file.id + '">' + file.owners[0].displayName + '</a></li>';
@@ -313,11 +315,11 @@ $(function() {
     return false;
   });
   $('a#new_game').click(function() {
-    controllers.new_game();
     erase_indexedDB(function() {
       return Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", function(data) {
         var file, list, _i, _len, _ref;
         list = [];
+        controllers.new_game();
         _ref = data.items;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           file = _ref[_i];
@@ -328,6 +330,8 @@ $(function() {
         if (list.length && list) {
           window.app_files = list;
           list_games();
+          $('.mask .panel').show();
+          $('#login').hide();
           return $('.mask').fadeIn();
         } else {
           return startRealtime();
@@ -375,12 +379,10 @@ $(function() {
   $('#invite').click(function() {
     var email;
     email = $('#invite_email').val();
-    Nimbus.Share.add_share_user_real(email, function(user) {
-      var id, link;
-      console.log('file shared');
-      id = !localStorage['doc_id'] ? window.c_file.id : localStorage['doc_id'];
-      link = location.origin + location.pathname + '?' + id;
-      return $.prompt('Copy and send this link to your friend: ' + link);
+    Nimbus.Share.add_share_user_real(email);
+    ios.notify({
+      title: 'Success',
+      message: 'Copy the url and send it to your friend'
     });
     return false;
   });

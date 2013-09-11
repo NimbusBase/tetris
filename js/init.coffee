@@ -107,6 +107,8 @@ Nimbus.Auth.set_app_ready(()->
 window.sync_players_on_callback = ()->
 	# check auth
 	if Nimbus.Auth.authorized()
+		url = location.pathname+'?'+c_file.id
+		window.history.pushState("Game Started", "Nimbus Tetris", url)
 		collabrators = doc.getCollaborators()
 		for one in collabrators
 			if one.isMe
@@ -117,16 +119,16 @@ window.sync_players_on_callback = ()->
 			process_game_data()
 		else
 			# parse user and game on panel
-			profile = ''
-			current = JSON.parse(localStorage['current'])
-			$('.panel .profile img').attr('src',current.photoUrl)
-			$('.panel .profile span').text(current.displayName)
 			list_games()
 			$('#login').hide();
 			$('.mask .panel').slideDown()
 
 window.list_games = ()->
 	html = ''
+	profile = ''
+	current = JSON.parse(localStorage['current'])
+	$('.panel .profile img').attr('src',current.photoUrl)
+	$('.panel .profile span').text(current.displayName)
 	for file in app_files
 		html += '<li class="game"><a href="#" data-id="'+file.id+'">'+file.owners[0].displayName+'</a></li>'
 	$('.panel .list ul').html(html)
@@ -260,10 +262,10 @@ $ ()->
 	# start a new game
 	$('a#new_game').click(()->
 		# delete file is being used
-		controllers.new_game()
 		erase_indexedDB(()->
 			Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", (data)->
 				list = []
+				controllers.new_game()
 				for file in data.items
 					if file.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0
 						list.push(file)
@@ -271,12 +273,13 @@ $ ()->
 				if list.length and list
 					window.app_files = list
 					list_games()
+					$('.mask .panel').show()
+					$('#login').hide()
 					$('.mask').fadeIn()
 				else
 					startRealtime()
 			)
 		)
-		
 		false
 	)
 	# logout user
@@ -319,11 +322,10 @@ $ ()->
 	$('#invite').click(()->
 		email = $('#invite_email').val()
 		# check email
-		Nimbus.Share.add_share_user_real(email,(user)->
-			console.log('file shared')
-			id = if !localStorage['doc_id'] then  window.c_file.id else localStorage['doc_id']
-			link = location.origin + location.pathname + '?'+ id
-			$.prompt('Copy and send this link to your friend: ' + link)
+		Nimbus.Share.add_share_user_real(email)
+		ios.notify(
+			title:'Success'
+			message:'Copy the url and send it to your friend'
 		)
 		false
 	)
