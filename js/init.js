@@ -140,7 +140,7 @@ window.sync_players_on_callback = function() {
       $('.panel .profile span').text(current.displayName);
       list_games();
       $('#login').hide();
-      return $('.mask .panel').show();
+      return $('.mask .panel').slideDown();
     }
   }
 };

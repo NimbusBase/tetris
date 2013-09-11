@@ -118,7 +118,7 @@ window.sync_players_on_callback = ()->
 			$('.panel .profile span').text(current.displayName)
 			list_games()
 			$('#login').hide();
-			$('.mask .panel').show()
+			$('.mask .panel').slideDown()
 
 window.list_games = ()->
 	html = ''
