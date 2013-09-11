@@ -45,13 +45,14 @@ input:focus{
 	opacity: 0.95;
 }
 
-.mask #login{position: relative;top:45%;left:41%;}
-.blue_button span {
-font-size: 20px;
-color: #afd6e7;
-font-weight: lighter;
-line-height: 27px;
-}
+.mask #login{position: absolute;top:45%;left:38%;}
+.mask .panel{position: relative;top:45%;left:23%;}
+.mask .profile,.mask .list{width: 25%;float: left;background: #eee;margin-right: 20px;padding: 20px;border-radius: 2px;}
+.mask .profile span{vertical-align: top;height: 20px;margin-top: 20px;display: inline-table;}
+.mask ul{list-style: none;padding: 0px;}
+.mask ul li{background: #fff;border: #ddd solid 1px;}
+.mask .panel a {width: 80%;display: block;padding: 10px;text-decoration: none;}
+.blue_button span {font-size: 20px;color: #afd6e7;font-weight: lighter;line-height: 27px;}
 .blue_button {
 -webkit-align-items: flex-start;
 -webkit-appearance: none;
