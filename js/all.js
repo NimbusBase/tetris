@@ -3769,7 +3769,8 @@
       log("gapi for everything loaded");
       return Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", function(data) {
         var c_file, i, x, _i, _len, _ref;
-        log("drive apps", data);
+        console.log("drive apps", data);
+        window.app_files = data.items;
         i = [];
         _ref = data.items;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {

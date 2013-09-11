@@ -128,15 +128,40 @@ Nimbus.Auth.set_app_ready(function() {
 });
 
 window.sync_players_on_callback = function() {
+  var current, profile;
   if (Nimbus.Auth.authorized()) {
-    $('.mask').hide();
-    return Game.sync_all(function() {
-      return Player.sync_all(function() {
-        check_online();
-        return join_me();
-      });
-    });
+    if (app_files && app_files.length < 2) {
+      $('.mask').hide();
+      return process_game_data();
+    } else {
+      profile = '';
+      current = JSON.parse(localStorage['current']);
+      $('.panel .profile img').attr('src', current.photoUrl);
+      $('.panel .profile span').text(current.displayName);
+      list_games();
+      $('#login').hide();
+      return $('.mask .panel').show();
+    }
   }
+};
+
+window.list_games = function() {
+  var file, html, _i, _len;
+  html = '';
+  for (_i = 0, _len = app_files.length; _i < _len; _i++) {
+    file = app_files[_i];
+    html += '<li class="game"><a href="#" data-id="' + file.id + '">' + file.owners[0].displayName + '</a></li>';
+  }
+  return $('.panel .list ul').html(html);
+};
+
+window.process_game_data = function() {
+  return Game.sync_all(function() {
+    return Player.sync_all(function() {
+      check_online();
+      return join_me();
+    });
+  });
 };
 
 window.join_me = function() {
@@ -170,13 +195,7 @@ window.join_me = function() {
     game.pause = 0;
     game.resume = 0;
     game.players = 1;
-    one = Player.create();
-    one.name = player.name;
-    one.userid = player.userid;
-    one.avatar = player.avatar;
-    one.piece = player.piece;
-    one.board = player.board;
-    one.online = true;
+    one = Player.create(player);
     one.index = 0;
     joined = true;
     one.save();
@@ -191,13 +210,7 @@ window.join_me = function() {
         one.online = true;
         joined = true;
       } else if (!one) {
-        one = Player.create();
-        one.name = player.name;
-        one.userid = player.userid;
-        one.avatar = player.avatar;
-        one.piece = player.piece;
-        one.board = player.board;
-        one.online = true;
+        one = Player.create(player);
         one.index = i;
         joined = true;
       }
@@ -262,40 +275,42 @@ window.check_online = function(clear) {
 };
 
 $(function() {
-  $('a#login').click(function() {
+  $('.panel .list').on('click', function(evt) {
+    var file_id;
+    file_id = $(evt.target).data('id');
+    load_new_file(file_id, function() {
+      return process_game_data();
+    });
+    $('.mask').fadeOut();
+    return false;
+  });
+  $('#login_btn').click(function() {
     console.log('auth start...');
     Nimbus.Auth.authorize('GDrive');
     return false;
   });
   $('a#new_game').click(function() {
-    controllers.pause();
-    controllers.boards = [];
     controllers.new_game();
-    Game.destroyAll();
     Player.destroyAll();
-    if (c_file.userPermission.role === 'writer') {
-      delete localStorage['doc_id'];
-      Nimbus.Share.get_current_user(function(user) {
-        return Nimbus.Share.get_shared_users_real(function(res) {
-          var item, _i, _len, _results;
-          _results = [];
-          for (_i = 0, _len = res.length; _i < _len; _i++) {
-            item = res[_i];
-            if (item.id === user.id) {
-              Nimbus.Share.remove_share_user_real(item.id, function() {
-                return startRealtime();
-              });
-              break;
-            } else {
-              _results.push(void 0);
-            }
-          }
-          return _results;
-        });
-      });
-    } else {
-      startRealtime();
-    }
+    Game.destroyAll();
+    Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", function(data) {
+      var file, list, _i, _len, _ref;
+      list = [];
+      _ref = data.items;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        file = _ref[_i];
+        if (file.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0) {
+          list.push(file);
+        }
+      }
+      if (list.length && list) {
+        window.app_files = list;
+        list_games();
+        return $('.mask').fadeIn();
+      } else {
+        return startRealtime();
+      }
+    });
     return false;
   });
   $('a#logout').click(function() {

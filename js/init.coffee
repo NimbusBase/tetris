@@ -107,17 +107,35 @@ Nimbus.Auth.set_app_ready(()->
 window.sync_players_on_callback = ()->
 	# check auth
 	if Nimbus.Auth.authorized()
-		$('.mask').hide()
+		if app_files and app_files.length < 2
+			$('.mask').hide()
+			process_game_data()
+		else
+			# parse user and game on panel
+			profile = ''
+			current = JSON.parse(localStorage['current'])
+			$('.panel .profile img').attr('src',current.photoUrl)
+			$('.panel .profile span').text(current.displayName)
+			list_games()
+			$('#login').hide();
+			$('.mask .panel').show()
 
-		Game.sync_all(()->
-			Player.sync_all(()->
-				# check all player status
-				check_online()
-				# join current user
-				join_me()
-			)
-			
+window.list_games = ()->
+	html = ''
+	for file in app_files
+		html += '<li class="game"><a href="#" data-id="'+file.id+'">'+file.owners[0].displayName+'</a></li>'
+	$('.panel .list ul').html(html)
+
+window.process_game_data = ()->
+	Game.sync_all(()->
+		Player.sync_all(()->
+			# check all player status
+			check_online()
+			# join current user
+			join_me()
 		)
+	)
+
 window.join_me = ()->
 	me = {}
 	collabrators = doc.getCollaborators()
@@ -147,13 +165,7 @@ window.join_me = ()->
 		game.players = 1
 
 		# add user 
-		one  = Player.create()
-		one.name = player.name
-		one.userid = player.userid
-		one.avatar = player.avatar
-		one.piece = player.piece
-		one.board = player.board
-		one.online = true
+		one  = Player.create(player)
 		one.index = 0
 		joined = true
 		one.save()
@@ -166,13 +178,7 @@ window.join_me = ()->
 				one.online = true
 				joined = true
 			else if !one
-				one  = Player.create()
-				one.name = player.name
-				one.userid = player.userid
-				one.avatar = player.avatar
-				one.piece = player.piece
-				one.board = player.board
-				one.online = true
+				one  = Player.create(player)
 				one.index = i
 				joined = true
 			one.save()
@@ -220,8 +226,16 @@ window.check_online = (clear)->
 	game.save()
 	
 $ ()->
+	$('.panel .list').on('click',(evt)->
+		file_id = $(evt.target).data('id')
+		load_new_file(file_id,()->
+			process_game_data()
+		)
+		$('.mask').fadeOut()
+		false
+	)
 	# login user
-	$('a#login').click(()->
+	$('#login_btn').click(()->
 		console.log 'auth start...'
 		Nimbus.Auth.authorize('GDrive')
 		false
@@ -229,27 +243,22 @@ $ ()->
 	# start a new game
 	$('a#new_game').click(()->
 		# delete file is being used
-		controllers.pause()
-		controllers.boards = []
 		controllers.new_game()
-		Game.destroyAll()
 		Player.destroyAll()
+		Game.destroyAll()
+		Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", (data)->
+			list = []
+			for file in data.items
+				if file.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0
+					list.push(file)
 
-		if c_file.userPermission.role is 'writer'
-			delete localStorage['doc_id']
-			Nimbus.Share.get_current_user((user)->
-				Nimbus.Share.get_shared_users_real((res)->
-					for item in res
-						if item.id is user.id
-							Nimbus.Share.remove_share_user_real(item.id,()->
-								startRealtime()
-							)
-							break
-				)
-			)
-		else
-			startRealtime()
-		
+			if list.length and list
+				window.app_files = list
+				list_games()
+				$('.mask').fadeIn()
+			else
+				startRealtime()
+		)
 		false
 	)
 	# logout user

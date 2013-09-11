@@ -1,4 +1,5 @@
 p,ul{margin: 0.5em 0;}
+a:visited{color:#265778;}
 #top_bar{
 	height: 70px;
 	background: rgb(24, 33, 61);
@@ -48,10 +49,11 @@ input:focus{
 .mask #login{position: absolute;top:45%;left:38%;}
 .mask .panel{position: relative;top:45%;left:23%;}
 .mask .profile,.mask .list{width: 25%;float: left;background: #eee;margin-right: 20px;padding: 20px;border-radius: 2px;}
-.mask .profile span{vertical-align: top;height: 20px;margin-top: 20px;display: inline-table;}
+.mask .profile span{vertical-align: top;height: 20px;display: inline-table;}
 .mask ul{list-style: none;padding: 0px;}
-.mask ul li{background: #fff;border: #ddd solid 1px;}
-.mask .panel a {width: 80%;display: block;padding: 10px;text-decoration: none;}
+.mask ul li{background: #fff;border: #ddd solid 1px;margin-bottom: 10px;}
+.mask .panel a {display: block;padding: 10px;text-decoration: none;}
+.mask .panel a:hover{background: rgb(66, 184, 221);color:#fff;}
 .blue_button span {font-size: 20px;color: #afd6e7;font-weight: lighter;line-height: 27px;}
 .blue_button {
 -webkit-align-items: flex-start;
