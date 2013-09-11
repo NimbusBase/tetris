@@ -304,6 +304,9 @@ $(function() {
     var file_id;
     file_id = $(evt.target).data('id');
     load_new_file(file_id, function() {
+      var url;
+      url = location.pathname + '?' + c_file.id;
+      window.history.pushState("New Game Loaded", "Nimbus Tetris", url);
       return process_game_data();
     });
     $('.mask').fadeOut();

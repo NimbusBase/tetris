@@ -248,6 +248,8 @@ $ ()->
 	$('.panel .list').on('click',(evt)->
 		file_id = $(evt.target).data('id')
 		load_new_file(file_id,()->
+			url = location.pathname+'?'+c_file.id
+			window.history.pushState("New Game Loaded", "Nimbus Tetris", url)
 			process_game_data()
 		)
 		$('.mask').fadeOut()
