@@ -2450,7 +2450,8 @@
             this.remove_user = this.proxy(this.remove_share_user);
             this.get_me = this.proxy(this.get_current_user);
             this.get_spaces = this.proxy(this.get_app_folders);
-            return this.switch_spaces = this.proxy(this.switch_to_app_folder);
+            this.switch_spaces = this.proxy(this.switch_to_app_folder);
+            return this.switch_file_real = this.proxy(this.switch_to_app_file_real);
           default:
             return log("share not supported with this service");
         }
@@ -3740,7 +3741,7 @@
     if (window.real_time_callback != null) {
       window.real_time_callback();
     }
-    todo.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, process_event);
+    return todo.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, process_event);
   };
 
   window.create_share_client = function() {
@@ -3803,11 +3804,11 @@
     if (callback != null) {
       window.real_time_callback = callback;
     }
-    Nimbus.Share.getFile(file_id,function(data){
+    return Nimbus.Share.getFile(file_id, function(data) {
+      window.c_file = data;
       if (!data.id) {
         return;
-      };
-      c_file = data;
+      }
       if (exception_handle && exception_handle instanceof Function) {
         return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, exception_handle);
       } else {
@@ -4670,6 +4671,30 @@
           }
           return _results;
         }
+      });
+      return window.current_syncing.ready();
+    },
+    switch_to_app_file_real: function(id, callback) {
+      var _this = this;
+      window.current_syncing = new DelayedOp(function() {
+        if (callback != null) {
+          return callback();
+        }
+      });
+      Nimbus.Share.getFile(id, function(data) {
+        var k, v, _ref;
+        if (!data.id) {
+          return;
+        }
+        window.c_file = data;
+        if (Nimbus.dictModel != null) {
+          _ref = Nimbus.dictModel;
+          for (k in _ref) {
+            v = _ref[k];
+            v.records = {};
+          }
+        }
+        return gapi.drive.realtime.load(id, onFileLoaded, initializeModel, handleErrors);
       });
       return window.current_syncing.ready();
     },
