@@ -130,7 +130,9 @@ window.list_games = ()->
 	$('.panel .profile img').attr('src',current.photoUrl)
 	$('.panel .profile span').text(current.displayName)
 	for file in app_files
-		html += '<li class="game"><a href="#" data-id="'+file.id+'">'+file.owners[0].displayName+'</a></li>'
+		is_owner = file.owners[0].displayName is current.displayName
+		html += '<li class="game"><a href="#" data-id="' + file.id + '">' + file.owners[0].displayName + '</a>'
+		html += '<p class="delete" data-owner="'+is_owner+'" data-id="'+file.id+'">X</p></li>'
 	$('.panel .list ul').html(html)
 
 window.process_game_data = ()->
@@ -247,12 +249,40 @@ window.erase_indexedDB = (callback)->
 $ ()->
 	$('.panel .list').on('click',(evt)->
 		file_id = $(evt.target).data('id')
-		load_new_file(file_id,()->
-			url = location.pathname+'?'+c_file.id
-			window.history.pushState("New Game Loaded", "Nimbus Tetris", url)
-			process_game_data()
-		)
-		$('.mask').fadeOut()
+		if $(evt.target)[0].tagName is 'P'
+			#delete file
+			if $(evt.target).data('owner')
+				Nimbus.Client.GDrive.deleteFile(file_id)
+				console.log 'file deleted'
+				$(evt.target).parent('li').remove()
+			else
+				current = JSON.pares(localStorage['current'])
+				if current.permissionId
+					Nimbus.Share.remove_shared_user_real(current.permissionId,()->
+						console.log 'file removed'
+						$(evt.target).remove()
+					)
+				else
+					Nimbus.Share.get_me((me)->
+						current.permissionId = me.id
+						localStorage['current'] = JSON.stringify(current)
+						Nimbus.Share.remove_shared_user_real(current.permissionId,()->
+							console.log 'file removed'
+							$(evt.target).remove()
+						)
+					)
+		else if $(evt.target)[0].tagName is 'A'
+			erase_indexedDB(()->
+				window.controllers.new_game() if window.controllers
+				load_new_file(file_id,()->
+					url = location.pathname+'?'+c_file.id
+					window.history.pushState("New Game Loaded", "Nimbus Tetris", url)
+					process_game_data()
+				)
+				$('.mask').fadeOut()
+			)
+		else
+			$('.mask').fadeOut() if window.controllers
 		false
 	)
 	# login user
@@ -262,26 +292,40 @@ $ ()->
 		false
 	)
 	# start a new game
-	$('a#new_game').click(()->
-		# delete file is being used
+	$('#new_game').click(()->
+		controllers.new_game() if window.controllers
 		erase_indexedDB(()->
-			Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", (data)->
-				list = []
-				controllers.new_game()
-				for file in data.items
-					if file.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0
-						list.push(file)
-
-				if list.length and list
-					window.app_files = list
-					list_games()
-					$('.mask .panel').show()
-					$('#login').hide()
-					$('.mask').fadeIn()
-				else
-					startRealtime()
+			Nimbus.Client.GDrive.insertFile("", Nimbus.Auth.app_name, 'application/vnd.google-apps.drive-sdk', null, (data)->
+				log("finished insertFile", data);
+				window.c_file = data;
+				if Nimbus.dictModel?
+					for k, v of Nimbus.dictModel
+						v.records = {}
+				gapi.drive.realtime.load(data.id, onFileLoaded, initializeModel);
 			)
 		)
+		false
+	)
+	# change file
+	$('a#choose_file').click(()->
+		# delete file is being used
+		
+		Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", (data)->
+			list = []
+			for file in data.items
+				if file.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0
+					list.push(file)
+
+			if list.length and list
+				window.app_files = list
+				list_games()
+				$('.mask .panel').show()
+				$('#login').hide()
+				$('.mask').fadeIn()
+			else
+				startRealtime()
+		)
+		
 		false
 	)
 	# logout user

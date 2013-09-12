@@ -152,7 +152,7 @@ window.sync_players_on_callback = function() {
 };
 
 window.list_games = function() {
-  var current, file, html, profile, _i, _len;
+  var current, file, html, is_owner, profile, _i, _len;
   html = '';
   profile = '';
   current = JSON.parse(localStorage['current']);
@@ -160,7 +160,9 @@ window.list_games = function() {
   $('.panel .profile span').text(current.displayName);
   for (_i = 0, _len = app_files.length; _i < _len; _i++) {
     file = app_files[_i];
-    html += '<li class="game"><a href="#" data-id="' + file.id + '">' + file.owners[0].displayName + '</a></li>';
+    is_owner = file.owners[0].displayName === current.displayName;
+    html += '<li class="game"><a href="#" data-id="' + file.id + '">' + file.owners[0].displayName + '</a>';
+    html += '<p class="delete" data-owner="' + is_owner + '" data-id="' + file.id + '">X</p></li>';
   }
   return $('.panel .list ul').html(html);
 };
@@ -301,15 +303,49 @@ window.erase_indexedDB = function(callback) {
 
 $(function() {
   $('.panel .list').on('click', function(evt) {
-    var file_id;
+    var current, file_id;
     file_id = $(evt.target).data('id');
-    load_new_file(file_id, function() {
-      var url;
-      url = location.pathname + '?' + c_file.id;
-      window.history.pushState("New Game Loaded", "Nimbus Tetris", url);
-      return process_game_data();
-    });
-    $('.mask').fadeOut();
+    if ($(evt.target)[0].tagName === 'P') {
+      if ($(evt.target).data('owner')) {
+        Nimbus.Client.GDrive.deleteFile(file_id);
+        console.log('file deleted');
+        $(evt.target).parent('li').remove();
+      } else {
+        current = JSON.pares(localStorage['current']);
+        if (current.permissionId) {
+          Nimbus.Share.remove_shared_user_real(current.permissionId, function() {
+            console.log('file removed');
+            return $(evt.target).remove();
+          });
+        } else {
+          Nimbus.Share.get_me(function(me) {
+            current.permissionId = me.id;
+            localStorage['current'] = JSON.stringify(current);
+            return Nimbus.Share.remove_shared_user_real(current.permissionId, function() {
+              console.log('file removed');
+              return $(evt.target).remove();
+            });
+          });
+        }
+      }
+    } else if ($(evt.target)[0].tagName === 'A') {
+      erase_indexedDB(function() {
+        if (window.controllers) {
+          window.controllers.new_game();
+        }
+        load_new_file(file_id, function() {
+          var url;
+          url = location.pathname + '?' + c_file.id;
+          window.history.pushState("New Game Loaded", "Nimbus Tetris", url);
+          return process_game_data();
+        });
+        return $('.mask').fadeOut();
+      });
+    } else {
+      if (window.controllers) {
+        $('.mask').fadeOut();
+      }
+    }
     return false;
   });
   $('#login_btn').click(function() {
@@ -317,29 +353,47 @@ $(function() {
     Nimbus.Auth.authorize('GDrive');
     return false;
   });
-  $('a#new_game').click(function() {
+  $('#new_game').click(function() {
+    if (window.controllers) {
+      controllers.new_game();
+    }
     erase_indexedDB(function() {
-      return Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", function(data) {
-        var file, list, _i, _len, _ref;
-        list = [];
-        controllers.new_game();
-        _ref = data.items;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          file = _ref[_i];
-          if (file.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0) {
-            list.push(file);
+      return Nimbus.Client.GDrive.insertFile("", Nimbus.Auth.app_name, 'application/vnd.google-apps.drive-sdk', null, function(data) {
+        var k, v, _ref;
+        log("finished insertFile", data);
+        window.c_file = data;
+        if (Nimbus.dictModel != null) {
+          _ref = Nimbus.dictModel;
+          for (k in _ref) {
+            v = _ref[k];
+            v.records = {};
           }
         }
-        if (list.length && list) {
-          window.app_files = list;
-          list_games();
-          $('.mask .panel').show();
-          $('#login').hide();
-          return $('.mask').fadeIn();
-        } else {
-          return startRealtime();
-        }
+        return gapi.drive.realtime.load(data.id, onFileLoaded, initializeModel);
       });
+    });
+    return false;
+  });
+  $('a#choose_file').click(function() {
+    Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", function(data) {
+      var file, list, _i, _len, _ref;
+      list = [];
+      _ref = data.items;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        file = _ref[_i];
+        if (file.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0) {
+          list.push(file);
+        }
+      }
+      if (list.length && list) {
+        window.app_files = list;
+        list_games();
+        $('.mask .panel').show();
+        $('#login').hide();
+        return $('.mask').fadeIn();
+      } else {
+        return startRealtime();
+      }
     });
     return false;
   });
