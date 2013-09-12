@@ -614,6 +614,8 @@ var Tetris = { };
   Tetris.Controller.prototype.new_game = function(){
     this.fallingPiece = null;
     this.boards = [];
+    this.pause();
+    $("#pause").text('Pause');
     for (var i =0; i <2; i++) {
       var context = $('#canvas'+i).get(0).getContext('2d');
       context.clearRect(0, 0, Tetris.BOARD_WIDTH_PIXELS, Tetris.BOARD_HEIGHT_PIXELS);

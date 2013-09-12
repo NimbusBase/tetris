@@ -329,9 +329,9 @@ $(function() {
   $('.panel .list').on('click', function(evt) {
     var file_id;
     file_id = $(evt.target).data('id');
-    if ($(evt.target)[0].tagName === 'P') {
+    if ($(evt.target)[0].tagName === 'P' && c_file.id !== file_id) {
       remove_file(file_id, evt);
-    } else if ($(evt.target)[0].tagName === 'A') {
+    } else if ($(evt.target)[0].tagName === 'A' && c_file.id !== file_id) {
       erase_indexedDB(function() {
         if (window.controllers) {
           window.controllers.new_game();
@@ -363,7 +363,7 @@ $(function() {
     window.new_game = true;
     erase_indexedDB(function() {
       Nimbus.Client.GDrive.insertFile("", Nimbus.Auth.app_name, 'application/vnd.google-apps.drive-sdk', null, function(data) {
-        var k, v, _ref;
+        var e, k, v, _ref;
         log("finished insertFile", data);
         window.c_file = data;
         if (Nimbus.dictModel != null) {
@@ -372,6 +372,12 @@ $(function() {
             v = _ref[k];
             v.records = {};
           }
+        }
+        try {
+          doc.close();
+        } catch (_error) {
+          e = _error;
+          console.log(e);
         }
         return gapi.drive.realtime.load(data.id, onFileLoaded, initializeModel);
       });

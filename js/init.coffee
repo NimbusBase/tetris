@@ -270,10 +270,10 @@ window.remove_file = (file_id,evt)->
 $ ()->
 	$('.panel .list').on('click',(evt)->
 		file_id = $(evt.target).data('id')
-		if $(evt.target)[0].tagName is 'P'
+		if $(evt.target)[0].tagName is 'P' and c_file.id isnt file_id
 			# remove file
 			remove_file(file_id,evt)
-		else if $(evt.target)[0].tagName is 'A'
+		else if $(evt.target)[0].tagName is 'A' and c_file.id isnt file_id
 			erase_indexedDB(()->
 				window.controllers.new_game() if window.controllers
 				Nimbus.Client.GDrive.switch_to_app_file_real(file_id,()->
@@ -306,6 +306,11 @@ $ ()->
 				if Nimbus.dictModel?
 					for k, v of Nimbus.dictModel
 						v.records = {}
+				try
+					doc.close()
+				catch e
+					console.log e
+				
 				gapi.drive.realtime.load(data.id, onFileLoaded, initializeModel);
 			)
 			return
