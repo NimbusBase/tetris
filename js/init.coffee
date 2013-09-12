@@ -213,7 +213,11 @@ window.check_online = (clear)->
 		if !player.online and clear
 			player.board = []
 			player.piece = null
-		player.save()
+		try
+			player.save()
+		catch e
+			alert(e.n)
+			location.reload()
 				
 	game.save()
 window.erase_indexedDB = (callback)->
@@ -233,37 +237,42 @@ window.erase_indexedDB = (callback)->
 		)
 		callback() if callback
 	return
+
+window.remove_file = (file_id,evt)->
+	#delete file
+	if $(evt.target).data('owner')
+		Nimbus.Client.GDrive.deleteFile(file_id)
+		console.log 'file deleted'
+		$(evt.target).parent('li').slideUp(()->
+			$(this).remove()
+		)
+	else
+		current = JSON.parse(localStorage['current'])
+		if current.permissionId
+			Nimbus.Share.remove_share_user_real(current.permissionId,()->
+				console.log 'file removed'
+				$(evt.target).parent('li').slideUp(()->
+					$(this).remove()
+				)
+			,file_id)
+		else
+			Nimbus.Share.get_me((me)->
+				current.permissionId = me.id
+				localStorage['current'] = JSON.stringify(current)
+				Nimbus.Share.remove_share_user_real(current.permissionId,()->
+					console.log 'file removed'
+					$(evt.target).parent('li').slideUp(()->
+						$(this).remove()
+					)
+				,file_id)
+			)
+
 $ ()->
 	$('.panel .list').on('click',(evt)->
 		file_id = $(evt.target).data('id')
 		if $(evt.target)[0].tagName is 'P'
-			#delete file
-			if $(evt.target).data('owner')
-				Nimbus.Client.GDrive.deleteFile(file_id)
-				console.log 'file deleted'
-				$(evt.target).parent('li').slideUp(()->
-					$(this).remove()
-				)
-			else
-				current = JSON.parse(localStorage['current'])
-				if current.permissionId
-					Nimbus.Share.remove_shared_user_real(current.permissionId,()->
-						console.log 'file removed'
-						$(evt.target).parent('li').slideUp(()->
-							$(this).remove()
-						)
-					)
-				else
-					Nimbus.Share.get_me((me)->
-						current.permissionId = me.id
-						localStorage['current'] = JSON.stringify(current)
-						Nimbus.Share.remove_shared_user_real(current.permissionId,()->
-							console.log 'file removed'
-							$(evt.target).parent('li').slideUp(()->
-								$(this).remove()
-							)
-						)
-					)
+			# remove file
+			remove_file(file_id,evt)
 		else if $(evt.target)[0].tagName is 'A'
 			erase_indexedDB(()->
 				window.controllers.new_game() if window.controllers

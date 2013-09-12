@@ -4511,7 +4511,7 @@
       };
       return this.make_request(params, callback);
     },
-    remove_share_user_real: function(id, callback) {
+    remove_share_user_real: function(id, callback,doc_id) {
       var params;
       log("&&& remove a user from sharing this app");
       if (!callback) {
@@ -4519,8 +4519,9 @@
           return log("Permission Removal Complete ", file);
         };
       }
+      doc_id = doc_id ? doc_id : window.c_file.id;
       params = {
-        path: "/drive/v2/files/" + window.c_file.id + "/permissions/" + id,
+        path: "/drive/v2/files/" + doc_id + "/permissions/" + id,
         method: "DELETE"
       };
       return this.make_request(params, callback);

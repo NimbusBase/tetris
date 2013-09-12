@@ -234,7 +234,7 @@ window.join_me = function() {
 };
 
 window.check_online = function(clear) {
-  var collabrators, game, i, one, original, player, players, _i, _j, _len;
+  var collabrators, e, game, i, one, original, player, players, _i, _j, _len;
   original = game = Game.first();
   if (!game) {
     return;
@@ -259,7 +259,13 @@ window.check_online = function(clear) {
       player.board = [];
       player.piece = null;
     }
-    player.save();
+    try {
+      player.save();
+    } catch (_error) {
+      e = _error;
+      alert(e.n);
+      location.reload();
+    }
   }
   return game.save();
 };
@@ -287,39 +293,44 @@ window.erase_indexedDB = function(callback) {
   };
 };
 
-$(function() {
-  $('.panel .list').on('click', function(evt) {
-    var current, file_id;
-    file_id = $(evt.target).data('id');
-    if ($(evt.target)[0].tagName === 'P') {
-      if ($(evt.target).data('owner')) {
-        Nimbus.Client.GDrive.deleteFile(file_id);
-        console.log('file deleted');
-        $(evt.target).parent('li').slideUp(function() {
+window.remove_file = function(file_id, evt) {
+  var current;
+  if ($(evt.target).data('owner')) {
+    Nimbus.Client.GDrive.deleteFile(file_id);
+    console.log('file deleted');
+    return $(evt.target).parent('li').slideUp(function() {
+      return $(this).remove();
+    });
+  } else {
+    current = JSON.parse(localStorage['current']);
+    if (current.permissionId) {
+      return Nimbus.Share.remove_share_user_real(current.permissionId, function() {
+        console.log('file removed');
+        return $(evt.target).parent('li').slideUp(function() {
           return $(this).remove();
         });
-      } else {
-        current = JSON.parse(localStorage['current']);
-        if (current.permissionId) {
-          Nimbus.Share.remove_shared_user_real(current.permissionId, function() {
-            console.log('file removed');
-            return $(evt.target).parent('li').slideUp(function() {
-              return $(this).remove();
-            });
+      }, file_id);
+    } else {
+      return Nimbus.Share.get_me(function(me) {
+        current.permissionId = me.id;
+        localStorage['current'] = JSON.stringify(current);
+        return Nimbus.Share.remove_share_user_real(current.permissionId, function() {
+          console.log('file removed');
+          return $(evt.target).parent('li').slideUp(function() {
+            return $(this).remove();
           });
-        } else {
-          Nimbus.Share.get_me(function(me) {
-            current.permissionId = me.id;
-            localStorage['current'] = JSON.stringify(current);
-            return Nimbus.Share.remove_shared_user_real(current.permissionId, function() {
-              console.log('file removed');
-              return $(evt.target).parent('li').slideUp(function() {
-                return $(this).remove();
-              });
-            });
-          });
-        }
-      }
+        }, file_id);
+      });
+    }
+  }
+};
+
+$(function() {
+  $('.panel .list').on('click', function(evt) {
+    var file_id;
+    file_id = $(evt.target).data('id');
+    if ($(evt.target)[0].tagName === 'P') {
+      remove_file(file_id, evt);
     } else if ($(evt.target)[0].tagName === 'A') {
       erase_indexedDB(function() {
         if (window.controllers) {
