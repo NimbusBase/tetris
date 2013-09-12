@@ -102,7 +102,30 @@ window.collaborator_left_callback = function(evt) {
 };
 
 Nimbus.Auth.set_app_ready(function() {
-  sync_players_on_callback();
+  var search;
+  search = localStorage['doc_id'];
+  if (search && search !== c_file.id) {
+    load_new_file(search, function() {
+      console.log('loading new file');
+      return sync_players_on_callback();
+    }, function(e) {
+      if (e.type === gapi.drive.realtime.ErrorType.TOKEN_REFRESH_REQUIRED) {
+        return authorizer.authorize();
+      } else if (e.type === gapi.drive.realtime.ErrorType.CLIENT_ERROR) {
+        if (localStorage['doc_id']) {
+          localStorage.clear();
+          return location.reload();
+        } else {
+          return alert("An Error happened: " + e.message);
+        }
+      } else {
+        return console.log('Unknown error:' + e.message);
+      }
+    });
+    return;
+  } else {
+    sync_players_on_callback();
+  }
 });
 
 window.sync_players_on_callback = function() {
@@ -110,6 +133,7 @@ window.sync_players_on_callback = function() {
   if (Nimbus.Auth.authorized()) {
     url = location.pathname + '?' + c_file.id;
     window.history.pushState("Game Started", "Nimbus Tetris", url);
+    localStorage['doc_id'] = c_file.id;
     collabrators = doc.getCollaborators();
     for (_i = 0, _len = collabrators.length; _i < _len; _i++) {
       one = collabrators[_i];
@@ -118,18 +142,8 @@ window.sync_players_on_callback = function() {
         break;
       }
     }
-    if (window.new_game === true) {
-      window.new_game = false;
-      return process_game_data();
-    }
-    if (app_files && app_files.length < 2) {
-      $('.mask').hide();
-      return process_game_data();
-    } else {
-      list_games();
-      $('#login').hide();
-      return $('.mask .panel').slideDown();
-    }
+    process_game_data();
+    return $('.mask').fadeOut();
   }
 };
 
@@ -329,20 +343,27 @@ $(function() {
   $('.panel .list').on('click', function(evt) {
     var file_id;
     file_id = $(evt.target).data('id');
-    if ($(evt.target)[0].tagName === 'P') {
+    if ($(evt.target)[0].tagName === 'P' && c_file.id !== file_id) {
       remove_file(file_id, evt);
-    } else if ($(evt.target)[0].tagName === 'A') {
+    } else if ($(evt.target)[0].tagName === 'A' && c_file.id !== file_id) {
       erase_indexedDB(function() {
+        var e;
         if (window.controllers) {
           window.controllers.new_game();
+        }
+        try {
+          doc.close();
+        } catch (_error) {
+          e = _error;
+          console.log(e);
         }
         Nimbus.Client.GDrive.switch_to_app_file_real(file_id, function() {
           var url;
           url = location.pathname + '?' + c_file.id;
           window.history.pushState("New Game Loaded", "Nimbus Tetris", url);
-          return process_game_data();
+          return localStorage['doc_id'] = c_file.id;
         });
-        return $('.mask').fadeOut();
+        $('.mask').fadeOut();
       });
     } else {
       if (window.controllers) {
@@ -363,7 +384,7 @@ $(function() {
     window.new_game = true;
     erase_indexedDB(function() {
       Nimbus.Client.GDrive.insertFile("", Nimbus.Auth.app_name, 'application/vnd.google-apps.drive-sdk', null, function(data) {
-        var k, v, _ref;
+        var e, k, v, _ref;
         log("finished insertFile", data);
         window.c_file = data;
         if (Nimbus.dictModel != null) {
@@ -372,6 +393,12 @@ $(function() {
             v = _ref[k];
             v.records = {};
           }
+        }
+        try {
+          doc.close();
+        } catch (_error) {
+          e = _error;
+          console.log(e);
         }
         return gapi.drive.realtime.load(data.id, onFileLoaded, initializeModel);
       });
