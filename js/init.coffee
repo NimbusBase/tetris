@@ -79,28 +79,8 @@ window.collaborator_left_callback = (evt)->
 
 
 Nimbus.Auth.set_app_ready(()->
-	search = localStorage['doc_id']
-	if search and search isnt c_file.id
-		load_new_file(search,()->
-			console.log 'loading new file'
-			sync_players_on_callback()
-		,(e)->
-			if e.type is gapi.drive.realtime.ErrorType.TOKEN_REFRESH_REQUIRED
-				authorizer.authorize()
-			else if e.type is gapi.drive.realtime.ErrorType.CLIENT_ERROR
-				if localStorage['doc_id']
-					localStorage.clear()
-					location.reload()
-				else
-					alert "An Error happened: " + e.message
-			else
-				console.log 'Unknown error:'+e.message
-
-		)
-		return
-	else
-		sync_players_on_callback()
-	
+	sync_players_on_callback()
+	return
 )
 
 # sync_on_start
@@ -114,6 +94,10 @@ window.sync_players_on_callback = ()->
 			if one.isMe
 				localStorage['current'] = JSON.stringify(one)
 				break
+		if window.new_game is true
+			window.new_game = false
+			return process_game_data()
+		
 		if app_files and app_files.length < 2
 			$('.mask').hide()
 			process_game_data()
@@ -132,6 +116,9 @@ window.list_games = ()->
 	for file in app_files
 		is_owner = file.owners[0].displayName is current.displayName
 		html += '<li class="game"><a href="#" data-id="' + file.id + '">' + file.owners[0].displayName + '</a>'
+		if file.id == c_file.id
+			html +='</li>'
+			continue
 		html += '<p class="delete" data-owner="'+is_owner+'" data-id="'+file.id+'">X</p></li>'
 	$('.panel .list ul').html(html)
 
@@ -254,13 +241,17 @@ $ ()->
 			if $(evt.target).data('owner')
 				Nimbus.Client.GDrive.deleteFile(file_id)
 				console.log 'file deleted'
-				$(evt.target).parent('li').remove()
+				$(evt.target).parent('li').slideUp(()->
+					$(this).remove()
+				)
 			else
 				current = JSON.pares(localStorage['current'])
 				if current.permissionId
 					Nimbus.Share.remove_shared_user_real(current.permissionId,()->
 						console.log 'file removed'
-						$(evt.target).remove()
+						$(evt.target).parent('li').slideUp(()->
+							$(this).remove()
+						)
 					)
 				else
 					Nimbus.Share.get_me((me)->
@@ -268,17 +259,20 @@ $ ()->
 						localStorage['current'] = JSON.stringify(current)
 						Nimbus.Share.remove_shared_user_real(current.permissionId,()->
 							console.log 'file removed'
-							$(evt.target).remove()
+							$(evt.target).parent('li').slideUp(()->
+								$(this).remove()
+							)
 						)
 					)
 		else if $(evt.target)[0].tagName is 'A'
 			erase_indexedDB(()->
 				window.controllers.new_game() if window.controllers
-				load_new_file(file_id,()->
+				Nimbus.Client.GDrive.switch_to_app_file_real(file_id,()->
 					url = location.pathname+'?'+c_file.id
 					window.history.pushState("New Game Loaded", "Nimbus Tetris", url)
 					process_game_data()
 				)
+				
 				$('.mask').fadeOut()
 			)
 		else
@@ -294,6 +288,8 @@ $ ()->
 	# start a new game
 	$('#new_game').click(()->
 		controllers.new_game() if window.controllers
+		window.new_game = true
+		# close doc before contiue
 		erase_indexedDB(()->
 			Nimbus.Client.GDrive.insertFile("", Nimbus.Auth.app_name, 'application/vnd.google-apps.drive-sdk', null, (data)->
 				log("finished insertFile", data);
@@ -303,14 +299,14 @@ $ ()->
 						v.records = {}
 				gapi.drive.realtime.load(data.id, onFileLoaded, initializeModel);
 			)
+			return
 		)
 		false
 	)
 	# change file
 	$('a#choose_file').click(()->
 		# delete file is being used
-		
-		Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", (data)->
+		Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "' and mimeType != 'application/vnd.google-apps.folder'", (data)->
 			list = []
 			for file in data.items
 				if file.mimeType.indexOf("application/vnd.google-apps.drive-sdk") >= 0

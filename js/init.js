@@ -102,29 +102,7 @@ window.collaborator_left_callback = function(evt) {
 };
 
 Nimbus.Auth.set_app_ready(function() {
-  var search;
-  search = localStorage['doc_id'];
-  if (search && search !== c_file.id) {
-    load_new_file(search, function() {
-      console.log('loading new file');
-      return sync_players_on_callback();
-    }, function(e) {
-      if (e.type === gapi.drive.realtime.ErrorType.TOKEN_REFRESH_REQUIRED) {
-        return authorizer.authorize();
-      } else if (e.type === gapi.drive.realtime.ErrorType.CLIENT_ERROR) {
-        if (localStorage['doc_id']) {
-          localStorage.clear();
-          return location.reload();
-        } else {
-          return alert("An Error happened: " + e.message);
-        }
-      } else {
-        return console.log('Unknown error:' + e.message);
-      }
-    });
-  } else {
-    return sync_players_on_callback();
-  }
+  sync_players_on_callback();
 });
 
 window.sync_players_on_callback = function() {
@@ -139,6 +117,10 @@ window.sync_players_on_callback = function() {
         localStorage['current'] = JSON.stringify(one);
         break;
       }
+    }
+    if (window.new_game === true) {
+      window.new_game = false;
+      return process_game_data();
     }
     if (app_files && app_files.length < 2) {
       $('.mask').hide();
@@ -162,6 +144,10 @@ window.list_games = function() {
     file = app_files[_i];
     is_owner = file.owners[0].displayName === current.displayName;
     html += '<li class="game"><a href="#" data-id="' + file.id + '">' + file.owners[0].displayName + '</a>';
+    if (file.id === c_file.id) {
+      html += '</li>';
+      continue;
+    }
     html += '<p class="delete" data-owner="' + is_owner + '" data-id="' + file.id + '">X</p></li>';
   }
   return $('.panel .list ul').html(html);
@@ -309,13 +295,17 @@ $(function() {
       if ($(evt.target).data('owner')) {
         Nimbus.Client.GDrive.deleteFile(file_id);
         console.log('file deleted');
-        $(evt.target).parent('li').remove();
+        $(evt.target).parent('li').slideUp(function() {
+          return $(this).remove();
+        });
       } else {
         current = JSON.pares(localStorage['current']);
         if (current.permissionId) {
           Nimbus.Share.remove_shared_user_real(current.permissionId, function() {
             console.log('file removed');
-            return $(evt.target).remove();
+            return $(evt.target).parent('li').slideUp(function() {
+              return $(this).remove();
+            });
           });
         } else {
           Nimbus.Share.get_me(function(me) {
@@ -323,7 +313,9 @@ $(function() {
             localStorage['current'] = JSON.stringify(current);
             return Nimbus.Share.remove_shared_user_real(current.permissionId, function() {
               console.log('file removed');
-              return $(evt.target).remove();
+              return $(evt.target).parent('li').slideUp(function() {
+                return $(this).remove();
+              });
             });
           });
         }
@@ -333,7 +325,7 @@ $(function() {
         if (window.controllers) {
           window.controllers.new_game();
         }
-        load_new_file(file_id, function() {
+        Nimbus.Client.GDrive.switch_to_app_file_real(file_id, function() {
           var url;
           url = location.pathname + '?' + c_file.id;
           window.history.pushState("New Game Loaded", "Nimbus Tetris", url);
@@ -357,8 +349,9 @@ $(function() {
     if (window.controllers) {
       controllers.new_game();
     }
+    window.new_game = true;
     erase_indexedDB(function() {
-      return Nimbus.Client.GDrive.insertFile("", Nimbus.Auth.app_name, 'application/vnd.google-apps.drive-sdk', null, function(data) {
+      Nimbus.Client.GDrive.insertFile("", Nimbus.Auth.app_name, 'application/vnd.google-apps.drive-sdk', null, function(data) {
         var k, v, _ref;
         log("finished insertFile", data);
         window.c_file = data;
@@ -375,7 +368,7 @@ $(function() {
     return false;
   });
   $('a#choose_file').click(function() {
-    Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "'", function(data) {
+    Nimbus.Client.GDrive.getMetadataList("title = '" + Nimbus.Auth.app_name + "' and mimeType != 'application/vnd.google-apps.folder'", function(data) {
       var file, list, _i, _len, _ref;
       list = [];
       _ref = data.items;
