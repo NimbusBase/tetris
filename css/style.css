@@ -47,13 +47,15 @@ input:focus{
 }
 
 .mask #login{position: absolute;top:45%;left:38%;}
-.mask .panel{position: relative;top: 45%;left: 20%;max-width: 80%;overflow: hidden;}
+.mask .panel{position: relative;top: 40%;left: 20%;max-width: 80%;overflow: hidden;}
 .mask .profile,.mask .list{width: 32%;float: left;background: #eee;margin-right: 20px;padding: 20px;border-radius: 2px;}
 .mask .profile span{vertical-align: top;height: 20px;display: inline-table;}
 .mask ul{list-style: none;padding: 0px;}
-.mask ul li{background: #fff;border: #ddd solid 1px;margin-bottom: 10px;}
+.mask ul li{background: #fff;border: #ddd solid 1px;margin-bottom: 10px;position: relative;}
 .mask .panel a {display: block;padding: 10px;text-decoration: none;}
 .mask .panel a:hover{background: rgb(66, 184, 221);color:#fff;}
+.mask .panel .delete{border:1px #fff;position: absolute;top: 4px;right: 5px;text-align: center;cursor: pointer;margin: 0;padding: 0.3em 0.6em;background: url('../img/trash.png') 2px 6px no-repeat;text-indent: -27px;overflow: hidden;}
+.mask .panel li p:hover{border:1px solid #ddd;}
 .blue_button span {font-size: 20px;color: #afd6e7;font-weight: lighter;line-height: 27px;}
 .blue_button {
 -webkit-align-items: flex-start;
