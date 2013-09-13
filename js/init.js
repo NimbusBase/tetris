@@ -113,7 +113,7 @@ Nimbus.Auth.set_app_ready(function() {
         return authorizer.authorize();
       } else if (e.type === gapi.drive.realtime.ErrorType.CLIENT_ERROR) {
         if (localStorage['doc_id']) {
-          localStorage.clear();
+          delete localStorage['doc_id'];
           return location.reload();
         } else {
           return alert("An Error happened: " + e.message);
@@ -431,7 +431,7 @@ $(function() {
   $('a#logout').click(function() {
     erase_indexedDB(function() {
       Nimbus.Auth.logout();
-      return location.reload();
+      return location.href = location.origin + location.pathname;
     });
     return false;
   });

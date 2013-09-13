@@ -89,7 +89,7 @@ Nimbus.Auth.set_app_ready(()->
 				authorizer.authorize()
 			else if e.type is gapi.drive.realtime.ErrorType.CLIENT_ERROR
 				if localStorage['doc_id']
-					localStorage.clear()
+					delete localStorage['doc_id']
 					location.reload()
 				else
 					alert "An Error happened: " + e.message
@@ -357,7 +357,7 @@ $ ()->
 	$('a#logout').click(()->
 		erase_indexedDB(()->
 			Nimbus.Auth.logout()
-			location.reload()
+			location.href = location.origin+location.pathname
 		)
 		false
 	)
