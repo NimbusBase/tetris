@@ -4727,7 +4727,7 @@
       params = {
         response_type: "token",
         client_id: Nimbus.Auth.key,
-        redirect_uri: window.location.href,
+        redirect_uri: window.location.origin+window.location.pathname,
         scope: Nimbus.Auth.secret,
         state: "gdrive_get_access_token",
         approval_prompt: "auto"
