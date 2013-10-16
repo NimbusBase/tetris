@@ -81,7 +81,12 @@ input:focus{
 	opacity: 1;
 }
 
-.mask #login{position: absolute;top: 25%;left:38%;}
+.mask #login {
+	position: absolute;
+	top: 25%;
+	left:38%;
+	width: 600px;
+}
 .mask .panel{position: relative;top: 40%;left: 20%;max-width: 80%;overflow: hidden;}
 .mask .profile,.mask .list{width: 32%;float: left;background: #eee;margin-right: 20px;padding: 20px;border-radius: 2px;}
 .mask .profile span{vertical-align: top;height: 20px;display: inline-table;}
@@ -156,6 +161,13 @@ width: 305px;
 word-spacing: 0px;
 writing-mode: lr-tb;
 zoom: 1;
+
+}
+
+@-moz-document url-prefix() { 
+  .blue_button {
+     height: 65px;
+  }
 }
 
 .blue_button:hover {
