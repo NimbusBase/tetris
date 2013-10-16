@@ -30,13 +30,18 @@ a:visited{color:#265778;}
 #top_bar .logo{float:left;padding-left: 10px;}
 #top_bar .btns{float:right;}
 #top_bar .btns a{
-	color: #fff;text-decoration: none;
-	background: transparent;
-	border: 3px solid rgb(103, 103, 180);
 	color: #fff;
+	text-decoration: none;
+	background: transparent;
+	border: 3px solid #555;
+	color: #aaa;
 	margin-left: 20px;
 	margin-top: 1em;
 	margin-right: 10px;
+}
+
+#top_bar .btns a:hover {
+	color: #fff;
 }
 
 #invite_email{
