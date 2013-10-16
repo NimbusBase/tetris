@@ -1,3 +1,7 @@
+html {
+	background: #444;
+}
+
 p,ul{margin: 0.5em 0;}
 a:visited{color:#265778;}
 .scroll::-webkit-scrollbar {
@@ -19,7 +23,7 @@ a:visited{color:#265778;}
 }
 #top_bar{
 	height: 70px;
-	background: rgb(24, 33, 61);
+	background: #333;
 	color: #fff;
 	width: 100%;
 }
@@ -47,7 +51,12 @@ input:focus{
 .player{width: 45%}
 .player p{text-align: center;}
 .player1{margin-right: 9%;}
-.player canvas{border:1px solid #ddd;margin: 0 auto;display: block;}
+.player canvas{
+	border:none;
+	margin: 0 auto;
+	display: block;
+	background: #555;
+}
 
 .player .avatar{-webkit-border-radius: 2px;border-radius: 2px;}
 #game{position: relative;}
@@ -146,5 +155,12 @@ zoom: 1;
 	background: -moz-linear-gradient(top,#2bb3ed,#247cdf);
 	background: -ms-linear-gradient(top,#2bb3ed,#247cdf);
 	background: linear-gradient(top,#2bb3ed,#247cdf);			
+}
+
+.player_name0, .player_name1 {
+	position: relative;
+	top: -10px;
+	left: 5px;
+	color: #aaa;
 }
 
