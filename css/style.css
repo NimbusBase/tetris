@@ -41,6 +41,9 @@ a:visited{color:#265778;}
 
 #invite_email{
 	padding: 9px 5px;
+	background: #444;
+	border: 0px;
+	color: #ccc;
 }
 
 input:focus{
@@ -56,6 +59,7 @@ input:focus{
 	margin: 0 auto;
 	display: block;
 	background: #555;
+	border: 5px solid #333;
 }
 
 .player .avatar{-webkit-border-radius: 2px;border-radius: 2px;}
