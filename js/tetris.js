@@ -11,8 +11,8 @@ var Tetris = { };
   Tetris.BOARD_WIDTH_PIXELS = Tetris.BOARD_WIDTH * Tetris.BLOCK_SIZE_PIXELS;
 
   Tetris.BLOCK_BORDER_COLOR = "#484848";
-  Tetris.BLOCK_COLORS = { 'X': 'black', 'b': '#0066cc', 'B': '#00a6d5', 'O': 'orange', 
-                          'Y': '#ffbc89', 'G': 'green', 'P': '#9370D8', 'R': 'red' };
+  Tetris.BLOCK_COLORS = { 'X': 'black', 'b': '#5856D6', 'B': '#00a6d5', 'O': '#FF9500', 
+                          'Y': '#ffbc89', 'G': '#4CD964', 'P': '#9370D8', 'R': '#FF2D55' };
 
   Tetris.GRAVITY_DELAY = 300; // 300ms
 
