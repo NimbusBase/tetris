@@ -63,7 +63,7 @@ input:focus{
 	opacity: 1;
 }
 
-.mask #login{position: absolute;top: 35%;left:38%;}
+.mask #login{position: absolute;top: 25%;left:38%;}
 .mask .panel{position: relative;top: 40%;left: 20%;max-width: 80%;overflow: hidden;}
 .mask .profile,.mask .list{width: 32%;float: left;background: #eee;margin-right: 20px;padding: 20px;border-radius: 2px;}
 .mask .profile span{vertical-align: top;height: 20px;display: inline-table;}
