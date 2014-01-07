@@ -4,6 +4,7 @@ sync =
 		'key':'361504558285.apps.googleusercontent.com'
 		"scope": "https://www.googleapis.com/auth/drive"
 		"app_name": "tetris"
+	'synchronous': true
 
 Nimbus.Auth.setup(sync)
 Game = Nimbus.Model.setup('Game',['player0','player1','state','players','restart','restart0','restart1','pause','resume','over','owner'])
