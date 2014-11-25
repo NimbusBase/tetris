@@ -3994,9 +3994,9 @@
         return;
       }
       if (exception_handle && exception_handle instanceof Function) {
-        return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, exception_handle);
+        return gapi.drive.realtime.load(file_id, Nimbus.realtime.onFileLoaded, Nimbus.realtime.initializeModel, exception_handle);
       } else {
-        return gapi.drive.realtime.load(file_id, onFileLoaded, initializeModel, handleErrors);
+        return gapi.drive.realtime.load(file_id, Nimbus.realtime.onFileLoaded, Nimbus.realtime.initializeModel, Nimbus.realtime.handleErrors);
       }
     });
   };

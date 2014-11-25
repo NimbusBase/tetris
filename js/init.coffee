@@ -4,6 +4,7 @@ sync =
 		'key':'361504558285.apps.googleusercontent.com'
 		"scope": "openid https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/plus.me"
 		"app_name": "tetris"
+		"app_id" : '361504558285'
 	'synchronous': true
 
 Nimbus.Auth.setup(sync)
@@ -16,7 +17,7 @@ if location.search and location.search.substr(1)
 	Player.destroyAll()
 	location.href = location.origin+location.pathname
 
-window.realtime_update_handler = (event,obj,isLocal)->
+window.realtime_update_handler = Nimbus.realtime.realtime_update_handler = (event,obj,isLocal)->
 	if !window.controllers
 		return
 	# stats
@@ -81,8 +82,8 @@ window.collaborator_left_callback = (evt)->
 
 Nimbus.Auth.set_app_ready(()->
 	search = localStorage['doc_id']
-	if search and search isnt c_file.id
-		load_new_file(search,()->
+	if search and search isnt Nimbus.realtime.c_file.id
+		Nimbus.realtime.load_new_file(search,()->
 			console.log 'loading new file'
 			sync_players_on_callback()
 		,(e)->
@@ -108,10 +109,10 @@ Nimbus.Auth.set_app_ready(()->
 window.sync_players_on_callback = ()->
 	# check auth
 	if Nimbus.Auth.authorized()
-		url = location.pathname+'?'+c_file.id
+		url = location.pathname+'?'+Nimbus.realtime.c_file.id
 		window.history.pushState("Game Started", "Nimbus Tetris", url)
-		localStorage['doc_id'] = c_file.id
-		collabrators = doc.getCollaborators()
+		localStorage['doc_id'] = Nimbus.realtime.c_file.id
+		collabrators = Nimbus.realtime.doc.getCollaborators()
 		for one in collabrators
 			if one.isMe
 				localStorage['current'] = JSON.stringify(one)
@@ -127,7 +128,7 @@ window.list_games = ()->
 	for file in app_files
 		is_owner = file.owners[0].displayName is current.displayName
 		html += '<li class="game"><a href="#" data-id="' + file.id + '">' + file.owners[0].displayName + '</a>'
-		if file.id == c_file.id
+		if file.id == Nimbus.realtime.c_file.id
 			html +='</li>'
 			continue
 		html += '<p class="delete" data-owner="'+is_owner+'" data-id="'+file.id+'">X</p></li>'
@@ -212,7 +213,7 @@ window.check_online = (clear)->
 	original = game = Game.first()
 	return if !game
 	players = Player.all()
-	collabrators = doc.getCollaborators()
+	collabrators = Nimbus.realtime.doc.getCollaborators()
 	for i in [0...2]
 		player = players[i]
 		continue if !player
@@ -281,20 +282,20 @@ window.remove_file = (file_id,evt)->
 $ ()->
 	$('.panel .list').on('click',(evt)->
 		file_id = $(evt.target).data('id')
-		if $(evt.target)[0].tagName is 'P' and c_file.id isnt file_id
+		if $(evt.target)[0].tagName is 'P' and Nimbus.realtime.c_file.id isnt file_id
 			# remove file
 			remove_file(file_id,evt)
-		else if $(evt.target)[0].tagName is 'A' and c_file.id isnt file_id
+		else if $(evt.target)[0].tagName is 'A' and Nimbus.realtime.c_file.id isnt file_id
 			erase_indexedDB(()->
 				window.controllers.new_game() if window.controllers
 				try
-					doc.close()
+					Nimbus.realtime.doc.close()
 				catch e
 					console.log e
 				Nimbus.Client.GDrive.switch_to_app_file_real(file_id,()->
-					url = location.pathname+'?'+c_file.id
+					url = location.pathname+'?'+Nimbus.realtime.c_file.id
 					window.history.pushState("New Game Loaded", "Nimbus Tetris", url)
-					localStorage['doc_id'] = c_file.id
+					localStorage['doc_id'] = Nimbus.realtime.c_file.id
 				)
 				
 				$('.mask').fadeOut()
@@ -318,12 +319,12 @@ $ ()->
 		erase_indexedDB(()->
 			Nimbus.Client.GDrive.insertFile("", Nimbus.Auth.app_name, 'application/vnd.google-apps.drive-sdk', null, (data)->
 				log("finished insertFile", data);
-				window.c_file = data;
+				Nimbus.realtime.c_file = data;
 				if Nimbus.dictModel?
 					for k, v of Nimbus.dictModel
 						v.records = {}
 				try
-					doc.close()
+					Nimbus.realtimeclose()
 				catch e
 					console.log e
 				
