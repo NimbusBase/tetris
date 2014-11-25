@@ -2,7 +2,7 @@
 sync = 
 	'GDrive':
 		'key':'361504558285.apps.googleusercontent.com'
-		"scope": "https://www.googleapis.com/auth/drive"
+		"scope": "openid https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/plus.me"
 		"app_name": "tetris"
 
 Nimbus.Auth.setup(sync)
